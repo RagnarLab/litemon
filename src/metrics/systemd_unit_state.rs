@@ -75,7 +75,7 @@ pub struct SystemdUnitState<'proxy> {
     cached_units: RefCell<HashMap<String, OwnedObjectPath>>,
 }
 
-impl<'proxy> SystemdUnitState<'proxy> {
+impl SystemdUnitState<'_> {
     /// Create a new metric query object. Keep this object in memory to cache
     /// relevant information.
     pub async fn new() -> anyhow::Result<Self> {
