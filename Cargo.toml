@@ -1,0 +1,48 @@
+[package]
+name = "minimon"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.85.0"
+description = "A very minimal and lightweight metric collector for Linux systems"
+license = "MIT OR Apache-2.0"
+authors = ["Arvid Gerstmann <github@arvid.io>"]
+homepage = "https://github.com/ragnarlab/minimon"
+repository = "https://github.com/ragnarlab/minimon"
+keywords = ["prometheus", "monitoring", "linux", "grafana"]
+categories = ["command-line-utilities"]
+readme = "README.md"
+
+[profile.dev]
+# This provides only line-tables and not full debug information necessary for
+# debugging under `gcc` or `lldb`. Turn this to "full" (or 2) when full debug
+# information are necessary.
+debug = "limited"
+opt-level = 0
+
+[profile.release]
+incremental = false
+codegen-units = 1
+strip = "none"
+split-debuginfo = "off"
+overflow-checks = true
+debug-assertions = false
+# Set this to 1 or 2 to get more useful backtraces in debugger.
+debug = "line-tables-only"
+
+# To speed up generation of stacktraces during development.
+[profile.dev.package.backtrace]
+opt-level = 3
+
+[dependencies]
+anyhow = "1"
+hashbrown = "0.15"
+tokio = { version = "1", default-features = false, features = ["rt", "time"] }
+
+# Required for systemd metrics.
+zbus = { version = "5.3", default-features = false, features = [] }
+zbus_systemd = { version = "0.25701", default-features = false, features = ["systemd1"] }
+
+# Required for cpu/memory metrics.
+procfs = "0.17"
+# Required for filesystem metrics.
+nix = { version = "0.30", features = ["fs"] }

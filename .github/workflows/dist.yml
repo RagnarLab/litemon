@@ -1,0 +1,70 @@
+name: dist
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+jobs:
+  dist:
+    name: dist (${{ matrix.target }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+          - os: ubuntu-latest
+            target: aarch64-unknown-linux-gnu
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-musl
+          - os: ubuntu-latest
+            target: aarch64-unknown-linux-musl
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: stable
+          target: ${{matrix.target}}
+          components: llvm-tools
+      - name: Install GCC arm64 (linux)
+        if: startsWith(matrix.target, 'aarch64-unknown-linux')
+        run: sudo apt-get update && sudo apt-get install gcc-aarch64-linux-gnu
+      - run: cargo build --target ${{ matrix.target }} --release
+        env:
+          CC: aarch64-linux-gnu-gcc
+          CXX: aarch64-linux-gnu-g++
+          LD: aarch64-linux-gnu-gcc
+          AR: aarch64-linux-gnu-ar
+          RUSTFLAGS: -Clinker=aarch64-linux-gnu-gcc
+        if: startsWith(matrix.target, 'aarch64-unknown-linux')
+      - run: cargo build --target ${{ matrix.target }} --release
+        if: ${{ !startsWith(matrix.target, 'aarch64-unknown-linux') }}
+      - name: Strip debug info
+        shell: bash
+        run: |
+          ./extras/strip.sh target/${{ matrix.target }}/release/minimon
+      - name: Archive
+        shell: bash
+        run: |
+          ver=${GITHUB_REF/refs\/*\//}
+          archive="minimon-$ver-${{ matrix.target }}"
+          buildid=$(rust-objcopy --dump-section .note.gnu.build-id=/dev/stdout "taregt/${{ matrix.target }}/release" | cat | tail -c+17 | od -An -v -tx1 | tr -d ' \n')
+          mkdir -p dist
+          mkdir -p dist-debuginfo
+          tar czf "dist/${archive}.tar.gz" -C target/${{ matrix.target }}/release minimon
+          tar czf "dist-debuginfo/${archive}-debug.tar.gz" target/${{ matrix.target }}/release "$buildid.debug"
+          ls -lah dist/*
+          ls -lah dist-debuginfo/*
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.target }}
+          path: dist
+      - name: Upload debug artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.target }}-debug
+          path: dist-debuginfo
