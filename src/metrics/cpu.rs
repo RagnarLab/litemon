@@ -21,11 +21,10 @@ impl LoadAverages {
     ///
     /// This function reads load average information from `/proc/loadavg`.
     pub async fn current() -> Result<Self> {
-        let load = tokio::task::spawn_blocking(|| {
+        let load = smol::unblock(|| {
             let ret = procfs::LoadAverage::current().context("reading /proc/loadavg")?;
             Ok::<procfs::LoadAverage, anyhow::Error>(ret)
-        })
-        .await??;
+        }).await?;
 
         Ok(Self {
             one: load.one,
@@ -77,11 +76,11 @@ impl Sub for CpuTime {
 impl CpuUsage {
     /// Retrieve the current CPU usage in ticks from boot.
     pub async fn now() -> Result<CpuUsage> {
-        let stat = tokio::task::spawn_blocking(|| {
+        let stat = smol::unblock(|| {
             let ret = procfs::KernelStats::current().context("reading /proc/stat")?;
             Ok::<procfs::KernelStats, anyhow::Error>(ret)
         })
-        .await??;
+        .await?;
 
         let per_core_ticks = stat
             .cpu_time
@@ -137,7 +136,7 @@ impl CpuUsage {
     /// Calculate the CPU usage between two snapshots separated by `period` for each CPU core.
     pub async fn period(period: Duration) -> Result<Vec<f64>> {
         let stat1 = Self::now().await.context("creating first snapshot")?;
-        tokio::time::sleep(period).await;
+        smol::Timer::after(period).await;
         let stat2 = Self::now().await.context("creating second snapshot")?;
 
         Ok(stat2.percentage_per_core(&stat1))
