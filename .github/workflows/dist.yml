@@ -58,7 +58,7 @@ jobs:
           mkdir -p dist
           mkdir -p dist-debuginfo
           tar czf "dist/${archive}.tar.gz" -C target/${{ matrix.target }}/release minimon
-          tar czf "dist-debuginfo/${archive}-debug.tar.gz" target/${{ matrix.target }}/release "${buildid}.debug"
+          tar czf "dist-debuginfo/${archive}-debug.tar.gz" -C target/${{ matrix.target }}/release "${buildid}.debug"
           ls -lah dist/*
           ls -lah dist-debuginfo/*
       - name: Upload artifacts
