@@ -5,6 +5,12 @@ on:
     types: [published]
   workflow_dispatch:
 
+permissions:
+  contents: write
+
+env:
+  RELEASE_VER: ${GITHUB_REF/refs\/*\//}
+
 jobs:
   dist:
     name: dist (${{ matrix.target }})
@@ -71,3 +77,10 @@ jobs:
         with:
           name: ${{ matrix.target }}-debug
           path: dist-debuginfo
+      - name: Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/minimon-${{ env.RELEASE_VER }}-${{ matrix.target }}.tar.gz
+            dist-debuginfo/minimon-${{ env.RELEASE_VER }}-${{ matrix.target }}-debug.tar.gz
+        # if: github.ref_type == 'tag'
