@@ -29,6 +29,8 @@ jobs:
           toolchain: stable
           target: ${{matrix.target}}
           components: llvm-tools
+      - name: Install cargo-binutils
+        run: cargo install cargo-binutils
       - name: Install GCC arm64 (linux)
         if: startsWith(matrix.target, 'aarch64-unknown-linux')
         run: sudo apt-get update && sudo apt-get install gcc-aarch64-linux-gnu
