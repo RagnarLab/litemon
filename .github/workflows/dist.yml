@@ -8,9 +8,6 @@ on:
 permissions:
   contents: write
 
-env:
-  RELEASE_VER: ${GITHUB_REF/refs\/*\//}
-
 jobs:
   dist:
     name: dist (${{ matrix.target }})
@@ -57,9 +54,8 @@ jobs:
       - name: Archive
         shell: bash
         run: |
-          ver=${GITHUB_REF/refs\/*\//}
           binary="target/${{ matrix.target }}/release/minimon"
-          archive="minimon-$ver-${{ matrix.target }}"
+          archive="minimon-${{ matrix.target }}"
           buildid=$(rust-objcopy --dump-section .note.gnu.build-id=/dev/stdout "$binary" | cat | tail -c+17 | od -An -v -tx1 | tr -d ' \n')
           mkdir -p dist
           mkdir -p dist-debuginfo
@@ -80,7 +76,8 @@ jobs:
       - name: Release
         uses: softprops/action-gh-release@v2
         with:
+          prerelease: true
           files: |
-            dist/minimon-${{ env.RELEASE_VER }}-${{ matrix.target }}.tar.gz
-            dist-debuginfo/minimon-${{ env.RELEASE_VER }}-${{ matrix.target }}-debug.tar.gz
+            dist/minimon-${{ matrix.target }}.tar.gz
+            dist-debuginfo/minimon-${{ matrix.target }}-debug.tar.gz
         # if: github.ref_type == 'tag'
