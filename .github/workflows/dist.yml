@@ -80,4 +80,4 @@ jobs:
           files: |
             dist/minimon-${{ matrix.target }}.tar.gz
             dist-debuginfo/minimon-${{ matrix.target }}-debug.tar.gz
-        # if: github.ref_type == 'tag'
+        if: github.ref_type == 'tag'
