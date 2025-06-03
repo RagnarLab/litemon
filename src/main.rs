@@ -11,6 +11,9 @@ use prometheus_client::encoding::text;
 use prometheus_client::metrics::gauge::ConstGauge;
 use prometheus_client::registry::Registry;
 
+#[global_allocator]
+static GLOBAL_ALLOC: tikv_jemallocator::Jemalloc = tikv_jemallocator::Jemalloc;
+
 /// Synchronous entrypoint into the application.
 fn main() {
     let ex = Rc::new(smol::LocalExecutor::new());
