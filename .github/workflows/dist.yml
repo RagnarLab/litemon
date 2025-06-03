@@ -52,12 +52,13 @@ jobs:
         shell: bash
         run: |
           ver=${GITHUB_REF/refs\/*\//}
+          binary="target/${{ matrix.target }}/release/minimon"
           archive="minimon-$ver-${{ matrix.target }}"
-          buildid=$(rust-objcopy --dump-section .note.gnu.build-id=/dev/stdout "taregt/${{ matrix.target }}/release" | cat | tail -c+17 | od -An -v -tx1 | tr -d ' \n')
+          buildid=$(rust-objcopy --dump-section .note.gnu.build-id=/dev/stdout "$binary" | cat | tail -c+17 | od -An -v -tx1 | tr -d ' \n')
           mkdir -p dist
           mkdir -p dist-debuginfo
           tar czf "dist/${archive}.tar.gz" -C target/${{ matrix.target }}/release minimon
-          tar czf "dist-debuginfo/${archive}-debug.tar.gz" target/${{ matrix.target }}/release "$buildid.debug"
+          tar czf "dist-debuginfo/${archive}-debug.tar.gz" target/${{ matrix.target }}/release "${buildid}.debug"
           ls -lah dist/*
           ls -lah dist-debuginfo/*
       - name: Upload artifacts
