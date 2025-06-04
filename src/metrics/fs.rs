@@ -53,7 +53,7 @@ impl FilesystemUsage {
     ///     Ok(())
     /// }
     /// ```
-    pub fn new<P: AsRef<Path>>(mount_point: P) -> Result<Self> {
+    pub async fn new<P: AsRef<Path>>(mount_point: P) -> Result<Self> {
         // Convert the mount point to a string for storage
         let mount_point_str = mount_point
             .as_ref()
@@ -62,7 +62,9 @@ impl FilesystemUsage {
             .to_string();
 
         // Get filesystem statistics using libc's statvfs
-        let stat = statvfs(mount_point.as_ref()).context("retrieving filesystem stats")?;
+        let pathref = mount_point.as_ref().to_owned();
+        let stat =
+            smol::unblock(move || statvfs(&pathref).context("retrieving filesystem stats")).await?;
 
         // Calculate filesystem metrics
         let block_size = stat.block_size() as u64;
@@ -95,8 +97,9 @@ impl FilesystemUsage {
         };
 
         // Get filesystem type and device information using procfs
-        let (fs_type, device) =
-            Self::get_fs_info(&mount_point_str).context("get info for mountpoint")?;
+        let (fs_type, device) = Self::get_fs_info(&mount_point_str)
+            .await
+            .context("get info for mountpoint")?;
 
         Ok(FilesystemUsage {
             mount_point: mount_point_str,
@@ -114,9 +117,9 @@ impl FilesystemUsage {
     ///
     /// # Returns
     /// A tuple of (<fstype>, <mountpoint>) format.
-    fn get_fs_info(mount_point: &str) -> Result<(String, String)> {
+    async fn get_fs_info(mount_point: &str) -> Result<(String, String)> {
         // Use procfs to read mount information
-        let mounts = procfs::mounts().context("reading /proc/mounts")?;
+        let mounts = smol::unblock(|| procfs::mounts().context("reading /proc/mounts")).await?;
 
         // Find the exact mount point
         for mount in mounts.iter() {
@@ -151,9 +154,9 @@ impl FilesystemUsage {
 /// # Returns
 /// A map of mount points to their usage information or an error if the information cannot be
 /// retrieved.
-pub fn get_all_filesystems() -> Result<HashMap<String, FilesystemUsage>> {
+pub async fn get_all_filesystems() -> Result<HashMap<String, FilesystemUsage>> {
     let mut ret = HashMap::new();
-    let mounts = procfs::mounts().context("reading /proc/mounts")?;
+    let mounts = smol::unblock(|| procfs::mounts().context("reading /proc/mounts")).await?;
 
     for mount in mounts.iter() {
         let mount_point = &mount.fs_spec;
@@ -167,7 +170,7 @@ pub fn get_all_filesystems() -> Result<HashMap<String, FilesystemUsage>> {
             continue;
         }
 
-        match FilesystemUsage::new(mount_point) {
+        match FilesystemUsage::new(mount_point).await {
             Ok(usage) => {
                 ret.insert(mount_point.to_string(), usage);
             }

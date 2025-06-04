@@ -85,7 +85,7 @@ async fn async_main(_ex: &Rc<smol::LocalExecutor<'_>>) {
     let cpu = CpuUsage::period(Duration::from_millis(200)).await.unwrap();
     println!("cpu={cpu:?}");
 
-    let rootfs = FilesystemUsage::new("/").unwrap();
+    let rootfs = FilesystemUsage::new("/").await.unwrap();
     println!("fs={}", rootfs.usage_ratio);
 
     let mut registry = <Registry>::default();
