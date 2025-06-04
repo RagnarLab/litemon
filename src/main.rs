@@ -99,4 +99,7 @@ async fn async_main(_ex: &Rc<smol::LocalExecutor<'_>>) {
     let mut buffer = String::new();
     text::encode(&mut buffer, &registry).unwrap();
     println!("{buffer}");
+
+    let net = NetworkStats::period(Duration::from_secs(1)).await.unwrap();
+    dbg!(net.interfaces.get("eth0"));
 }
