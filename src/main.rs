@@ -2,11 +2,12 @@ use std::rc::Rc;
 use std::time::Duration;
 
 use anyhow::Result;
-use minimon::http;
-use minimon::metrics::cpu::{CpuUsage, LoadAverages};
-use minimon::metrics::fs::FilesystemUsage;
-use minimon::metrics::memory::get_memory_used_percentage;
-use minimon::metrics::systemd_unit_state::SystemdUnitState;
+use litemon::http;
+use litemon::metrics::cpu::{CpuUsage, LoadAverages};
+use litemon::metrics::fs::FilesystemUsage;
+use litemon::metrics::memory::get_memory_used_percentage;
+use litemon::metrics::net::NetworkStats;
+use litemon::metrics::systemd_unit_state::SystemdUnitState;
 use prometheus_client::encoding::text;
 use prometheus_client::metrics::gauge::ConstGauge;
 use prometheus_client::registry::Registry;

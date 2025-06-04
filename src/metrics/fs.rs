@@ -44,7 +44,7 @@ impl FilesystemUsage {
     /// # Example
     ///
     /// ```
-    /// use minimon::metrics::fs::FilesystemUsage;
+    /// use litemon::metrics::fs::FilesystemUsage;
     ///
     /// fn main() -> anyhow::Result<()> {
     ///     let usage = FilesystemUsage::new("/")?;

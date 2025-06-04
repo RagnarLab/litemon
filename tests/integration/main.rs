@@ -1,4 +1,4 @@
-//! Tests for minimon.
+//! Tests for litemon.
 
 #[test]
 fn empty() {}

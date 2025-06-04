@@ -1,13 +1,13 @@
 [package]
-name = "minimon"
+name = "litemon"
 version = "0.1.0"
 edition = "2024"
 rust-version = "1.85.0"
 description = "A very minimal and lightweight metric collector for Linux systems"
 license = "MIT OR Apache-2.0"
 authors = ["Arvid Gerstmann <github@arvid.io>"]
-homepage = "https://github.com/ragnarlab/minimon"
-repository = "https://github.com/ragnarlab/minimon"
+homepage = "https://github.com/ragnarlab/litemon"
+repository = "https://github.com/ragnarlab/litemon"
 keywords = ["prometheus", "monitoring", "linux", "grafana"]
 categories = ["command-line-utilities"]
 readme = "README.md"

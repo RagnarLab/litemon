@@ -29,7 +29,7 @@ where
                         return f(stream).await;
                     }
 
-                    stream.write_all(b"HTTP/1.1 404 Not Found\nServer: minimon\n\n").await?;
+                    stream.write_all(b"HTTP/1.1 404 Not Found\nServer: litemon\n\n").await?;
                     return Ok(());
                 }
             }
@@ -40,7 +40,9 @@ where
 
 async fn serve(stream: smol::net::TcpStream) -> anyhow::Result<()> {
     try_parse_http(stream, |mut stream| async move {
-        stream.write_all(b"HTTP/1.1 200 OK\n\n").await?;
+        stream.write_all(b"HTTP/1.1 200 OK\n").await?;
+        stream.write_all(b"Server: litemon\n").await?;
+
         Ok::<(), anyhow::Error>(())
     })
     .await?;
