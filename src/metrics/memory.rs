@@ -1,7 +1,12 @@
 //! Memory metrics collection.
 
+use std::cell::RefCell;
+
 use anyhow::{Context, Result};
 use procfs::Current;
+use prometheus_client::metrics::gauge::ConstGauge;
+
+use super::{DynFuture, Metric};
 
 /// Returns the percentage of memory currently used on the system.
 ///
@@ -32,6 +37,7 @@ pub async fn get_memory_used_percentage() -> Result<f64> {
 }
 
 /// Detailed memory statistics.
+#[derive(Debug)]
 pub struct MemoryStats {
     /// Total physical memory in kilobytes
     pub total_kb: u64,
@@ -101,5 +107,32 @@ impl MemoryStats {
             swap_used_kb,
             swap_used_percent,
         })
+    }
+}
+
+/// Collector for memory stats.
+#[derive(Debug)]
+pub struct MemoryStatsCollector {
+    stats: RefCell<Option<MemoryStats>>,
+}
+
+impl Metric for MemoryStatsCollector {
+    fn collect(&self, _options: hashbrown::HashMap<String, String>) -> DynFuture<Result<()>> {
+        Box::pin(async move {
+            let stats = MemoryStats::current().await?;
+            *self.stats.borrow_mut() = Some(stats);
+            Ok(())
+        })
+    }
+
+    fn register(&self, registry: &mut prometheus_client::registry::Registry) {
+        if let Some(stats) = &*self.stats.borrow() {
+            let percentage_gauge = ConstGauge::new(stats.used_percent);
+            registry.register(
+                "litemon_mem_used_percentage",
+                "Memory used (0.0-1.0) in percent",
+                percentage_gauge,
+            );
+        }
     }
 }

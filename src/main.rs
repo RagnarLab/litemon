@@ -2,6 +2,7 @@ use std::rc::Rc;
 
 use litemon::args::CliArgs;
 use litemon::config::UserConfig;
+use litemon::http;
 
 #[global_allocator]
 static GLOBAL_ALLOC: tikv_jemallocator::Jemalloc = tikv_jemallocator::Jemalloc;
@@ -20,4 +21,8 @@ async fn async_main(_ex: &Rc<smol::LocalExecutor<'_>>) {
     let config = UserConfig::from_path(&args.config_path)
         .await
         .expect("invalid config");
+
+    http::listen(&args.listen_address, args.listen_port)
+        .await
+        .unwrap();
 }
