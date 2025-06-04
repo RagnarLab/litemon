@@ -41,6 +41,11 @@ lexopt = "0.3"
 httparse = "1.10"
 http = "1.3"
 tikv-jemallocator = "0.6"
+# tikv-jemalloc-sys = { version = "0.6", features = ["stats"] }
+# tikv-jemalloc-ctl = { version = "0.6", features = ["stats", "use_std"] }
+
+# Configuration language.
+kdl = "6.3"
 
 # Required for systemd metrics.
 zbus = { version = "5.3", default-features = false, features = [] }

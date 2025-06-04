@@ -1,0 +1,14 @@
+metrics {
+  cpu_seconds enabled=#true period_ms=200
+  loadavg enabled=#true
+  memory_used enabled=#true
+  systemd_unit_state enabled=#true {
+    units "valkey.service" "postgresql.service"
+  }
+  network_throughput enabled=#true {
+    interfaces "eth0" "lo"
+  }
+  disk_usage enabled=#true {
+    mountpoints "/"
+  }
+}

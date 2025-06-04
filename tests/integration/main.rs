@@ -1,4 +1,4 @@
 //! Tests for litemon.
 
-#[test]
-fn empty() {}
+mod cliargs;
+mod config;
