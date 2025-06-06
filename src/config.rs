@@ -10,7 +10,7 @@ use kdl::{KdlDocument, KdlNode};
 ///
 /// The config implements `Default`, and will use this value if no configuration was found in the
 /// environment.
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct UserConfig {
     /// Everything related to metrics.
     pub metrics: MetricsConfig,
@@ -59,14 +59,6 @@ pub struct NetworkThroughputConfig {
 pub struct DiskUsageConfig {
     pub enabled: bool,
     pub mountpoints: Vec<String>,
-}
-
-impl Default for UserConfig {
-    fn default() -> Self {
-        Self {
-            metrics: Default::default(),
-        }
-    }
 }
 
 impl Default for MetricsConfig {
@@ -206,7 +198,7 @@ impl UserConfig {
 
         let metrics = doc
             .get("metrics")
-            .map_or_else(|| MetricsConfig::default(), extract_metrics);
+            .map_or_else(MetricsConfig::default, extract_metrics);
         let ret = Self { metrics };
 
         Ok(ret)
