@@ -361,7 +361,7 @@ impl Metric for SystemdUnitStateCollector {
 
             if let Some(client) = self.systemd_client.lock().await.as_ref() {
                 for unit_name in &*units {
-                    match client.active_state(&unit_name).await {
+                    match client.active_state(unit_name).await {
                         Ok(state) => {
                             for state_name in ActiveState::all_states() {
                                 let labels = SystemdUnitLabels {

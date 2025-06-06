@@ -10,7 +10,7 @@ use smol_hyper::rt::{FuturesIo, SmolTimer};
 use crate::collector::Collector;
 use crate::http_utils::{internal_server_error, not_found};
 
-async fn serve_metrics(collector: &Collector) -> Result<Response<BoxBody<Bytes, hyper::Error>>> {
+async fn serve_metrics(_collector: &Collector) -> Result<Response<BoxBody<Bytes, hyper::Error>>> {
     Err(anyhow::anyhow!("no"))
 }
 

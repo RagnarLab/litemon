@@ -26,7 +26,7 @@ impl Default for CliArgs {
 }
 
 impl CliArgs {
-    /// Thin wrapper over [`Self::from_iter`].
+    /// Thin wrapper over [`Self::from_args`].
     pub fn from_env() -> Result<Self> {
         Self::from_args(std::env::args())
     }

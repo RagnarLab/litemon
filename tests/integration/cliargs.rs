@@ -6,13 +6,13 @@ use litemon::args::CliArgs;
 
 #[test]
 fn parse_args_default() {
-    let args = CliArgs::from_iter(["litemon"]).unwrap();
+    let args = CliArgs::from_args(["litemon"]).unwrap();
     assert_eq!(args, CliArgs::default());
 }
 
 #[test]
 fn parse_args_short() {
-    let args = CliArgs::from_iter([
+    let args = CliArgs::from_args([
         "litemon",
         "-n",
         "localhost",
@@ -33,7 +33,7 @@ fn parse_args_short() {
 
 #[test]
 fn parse_args_long() {
-    let args = CliArgs::from_iter([
+    let args = CliArgs::from_args([
         "litemon",
         "--listen",
         "localhost",

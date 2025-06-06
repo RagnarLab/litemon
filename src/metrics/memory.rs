@@ -1,12 +1,7 @@
 //! Memory metrics collection.
 
-use std::sync::atomic::AtomicU64;
-
 use anyhow::{Context, Result};
 use procfs::Current;
-use prometheus_client::metrics::gauge::Gauge;
-
-use super::{DynFuture, Metric};
 
 /// Returns the percentage of memory currently used on the system.
 ///

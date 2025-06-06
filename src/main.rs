@@ -19,7 +19,7 @@ fn main() {
 /// Real, asynchronous entrypoint.
 async fn async_main(_ex: &Rc<smol::LocalExecutor<'_>>) {
     let args = CliArgs::from_env().expect("invalid args");
-    let config = UserConfig::from_path(&args.config_path)
+    let _config = UserConfig::from_path(&args.config_path)
         .await
         .expect("invalid config");
 

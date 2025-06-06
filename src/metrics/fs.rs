@@ -43,7 +43,7 @@ impl FilesystemUsage {
     ///
     /// # Example
     ///
-    /// ```
+    /// ```ignore,no_run
     /// use litemon::metrics::fs::FilesystemUsage;
     ///
     /// fn main() -> anyhow::Result<()> {

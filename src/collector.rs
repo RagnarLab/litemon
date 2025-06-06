@@ -1,6 +1,6 @@
 //! Collector for metrics.
+#![allow(clippy::new_without_default)]
 
-use std::cell::RefCell;
 use std::sync::Arc;
 
 use anyhow::Result;
