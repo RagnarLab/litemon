@@ -28,11 +28,11 @@ impl Default for CliArgs {
 impl CliArgs {
     /// Thin wrapper over [`Self::from_iter`].
     pub fn from_env() -> Result<Self> {
-        Self::from_iter(std::env::args())
+        Self::from_args(std::env::args())
     }
 
     /// Parse the CLI arguments into [`Self`].
-    pub fn from_iter<I>(it: I) -> Result<Self>
+    pub fn from_args<I>(it: I) -> Result<Self>
     where
         I: IntoIterator,
         I::Item: Into<std::ffi::OsString>,
