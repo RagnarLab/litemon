@@ -1,9 +1,9 @@
-use std::cell::RefCell;
 use std::fmt::Display;
 use std::str::FromStr;
 
 use anyhow::Context;
 use hashbrown::HashMap;
+use smol::lock::{RwLock, RwLockUpgradableReadGuard};
 use zbus::zvariant::OwnedObjectPath;
 use zbus_systemd::systemd1::{ManagerProxy, UnitProxy};
 
@@ -29,6 +29,22 @@ pub enum ActiveState {
     Reloading,
     /// Unit is active and a new mount is being activated in its namespace.
     Refreshing,
+}
+
+impl ActiveState {
+    /// Returns a slice of all states as string.
+    pub fn all_states() -> &'static [&'static str] {
+        &[
+            "active",
+            "inactive",
+            "failed",
+            "activating",
+            "deactivating",
+            "maintenance",
+            "reloading",
+            "refreshing",
+        ]
+    }
 }
 
 impl FromStr for ActiveState {
@@ -72,7 +88,7 @@ pub struct SystemdUnitState<'proxy> {
     /// Cached manager.
     manager: zbus_systemd::systemd1::ManagerProxy<'proxy>,
     /// Key is a unit name, value is the path to the unitproxy.
-    cached_units: RefCell<HashMap<String, OwnedObjectPath>>,
+    cached_units: RwLock<HashMap<String, OwnedObjectPath>>,
 }
 
 impl SystemdUnitState<'_> {
@@ -92,7 +108,7 @@ impl SystemdUnitState<'_> {
         Ok(Self {
             connection,
             manager,
-            cached_units: RefCell::new(HashMap::new()),
+            cached_units: RwLock::new(HashMap::new()),
         })
     }
 
@@ -100,9 +116,9 @@ impl SystemdUnitState<'_> {
     /// `.service`).
     pub async fn active_state(&self, unit: &str) -> anyhow::Result<ActiveState> {
         let unit_path = {
-            if self.cached_units.borrow_mut().contains_key(unit) {
-                self.cached_units
-                    .borrow()
+            let reader_guard = self.cached_units.upgradable_read().await;
+            if reader_guard.contains_key(unit) {
+                reader_guard
                     .get(unit)
                     .context("retrieving cached objectpath")?
                     .to_owned()
@@ -112,9 +128,8 @@ impl SystemdUnitState<'_> {
                     .get_unit(unit.to_owned())
                     .await
                     .with_context(|| format!("finding path to unit: {unit}"))?;
-                self.cached_units
-                    .borrow_mut()
-                    .insert(unit.to_owned(), unit_path.clone());
+                let mut writer = RwLockUpgradableReadGuard::upgrade(reader_guard).await;
+                writer.insert(unit.to_owned(), unit_path.clone());
                 unit_path
             }
         };
