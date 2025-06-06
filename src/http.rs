@@ -1,57 +1,70 @@
 //! Lightweight HTTP server for serving metrics.
 
-use anyhow::Context;
-use smol::io::{AsyncReadExt, AsyncWriteExt};
+use anyhow::{Context, Result};
+use http_body_util::combinators::BoxBody;
+use hyper::body::Bytes;
+use hyper::service::service_fn;
+use hyper::{body::Incoming, Request, Response};
+use smol_hyper::rt::{FuturesIo, SmolTimer};
 
-async fn try_parse_http<F, Fut>(mut stream: smol::net::TcpStream, f: F) -> anyhow::Result<()>
-where
-    F: FnOnce(smol::net::TcpStream) -> Fut,
-    Fut: Future<Output = anyhow::Result<()>>,
-{
-    let mut buf: Vec<u8> = Vec::new();
-    let mut tmp = [0_u8; 4096];
+use crate::collector::Collector;
+use crate::http_utils::{internal_server_error, not_found};
 
-    loop {
-        match stream.read(&mut tmp).await {
-            Ok(n) => {
-                if n > 0 {
-                    buf.extend_from_slice(&tmp[0..n]);
-                }
+async fn serve_metrics(collector: &Collector) -> Result<Response<BoxBody<Bytes, hyper::Error>>> {
+    Err(anyhow::anyhow!("no"))
+}
 
-                let mut headers = [httparse::EMPTY_HEADER; 64];
-                let mut req = httparse::Request::new(&mut headers);
-                if req
-                    .parse(&buf)
-                    .context("parsing http request")?
-                    .is_complete()
-                {
-                    if req.method == Some("GET") && req.path == Some("/metrics") {
-                        return f(stream).await;
-                    }
+async fn serve_request(
+    collector: Collector,
+    req: Request<Incoming>,
+) -> Result<Response<BoxBody<Bytes, hyper::Error>>> {
+    use hyper::Method;
 
-                    stream.write_all(b"HTTP/1.1 404 Not Found\nServer: litemon\n\n").await?;
-                    return Ok(());
-                }
-            }
-            Err(err) => return Err(anyhow::anyhow!("reading from stream: {err}")),
+    match (req.method(), req.uri().path()) {
+        (&Method::GET, "/metrics") => {
+            let res = serve_metrics(&collector)
+                .await
+                .inspect_err(|err| eprintln!("error serving metrics request: {err}"))
+                .unwrap_or_else(|_err| internal_server_error());
+            Ok(res)
         }
+
+        (_, _) => Ok(not_found()),
     }
 }
 
-async fn serve(stream: smol::net::TcpStream) -> anyhow::Result<()> {
-    try_parse_http(stream, |mut stream| async move {
-        stream.write_all(b"HTTP/1.1 200 OK\n").await?;
-        stream.write_all(b"Server: litemon\n").await?;
+async fn handle_client(collector: Collector, stream: smol::net::TcpStream) -> anyhow::Result<()> {
+    let service = service_fn(move |req| serve_request(collector.clone(), req));
 
-        Ok::<(), anyhow::Error>(())
-    })
-    .await?;
+    hyper::server::conn::http1::Builder::new()
+        .timer(SmolTimer::new())
+        .serve_connection(FuturesIo::new(stream), service)
+        .await?;
+
+    // try_parse_http(stream, |mut stream| async move {
+    //     // let futs: Vec<_> = metrics.iter().map(|metric| metric.collect()).collect();
+    //     // let _results = join_all(futs).await;
+
+    //     // let mut buf = String::with_capacity(2048);
+    //     // encode(&mut buf, &registry)?;
+
+    //     stream.write_all(b"HTTP/1.1 200 OK\n").await?;
+    //     stream.write_all(b"Server: litemon\n\n").await?;
+    //     // stream.write_all(buf.as_bytes()).await?;
+
+    //     Ok::<(), anyhow::Error>(())
+    // })
+    // .await?;
 
     Ok(())
 }
 
 /// Serves the metrics endpoint.
-pub async fn listen(listen_addr: &str, listen_port: u16) -> anyhow::Result<()> {
+pub async fn listen(
+    collector: Collector,
+    listen_addr: &str,
+    listen_port: u16,
+) -> anyhow::Result<()> {
     let addr: std::net::IpAddr = listen_addr
         .parse()
         .with_context(|| format!("parsing listen addr: {listen_addr}"))?;
@@ -64,8 +77,9 @@ pub async fn listen(listen_addr: &str, listen_port: u16) -> anyhow::Result<()> {
     loop {
         let (stream, _addr) = listener.accept().await.context("accepting connection")?;
 
+        let collector = collector.clone();
         smol::spawn(async move {
-            if let Err(err) = serve(stream).await {
+            if let Err(err) = handle_client(collector, stream).await {
                 eprintln!("error: serving request: {err}");
             }
         })

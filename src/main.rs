@@ -1,6 +1,7 @@
 use std::rc::Rc;
 
 use litemon::args::CliArgs;
+use litemon::collector::Collector;
 use litemon::config::UserConfig;
 use litemon::http;
 
@@ -22,7 +23,9 @@ async fn async_main(_ex: &Rc<smol::LocalExecutor<'_>>) {
         .await
         .expect("invalid config");
 
-    http::listen(&args.listen_address, args.listen_port)
+    let collector = Collector::new();
+
+    http::listen(collector.clone(), &args.listen_address, args.listen_port)
         .await
         .unwrap();
 }

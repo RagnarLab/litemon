@@ -61,6 +61,13 @@ prometheus.scrape "litemon_exporter" {
 }
 ```
 
+
+## Metrics
+
+|          Metric Name          | Metric Type |          Description          |        Cardinality        |
+| ----------------------------- | ----------- | ----------------------------- | ------------------------- |
+| litemon_mem_used_percentage   | Gauge       | Memory used in percent (0-1)  | 1 per host                |
+
 ## Support
 
 > Development of LiteMon is sponsored by [RagnarLab](https://ragnarlab.com). RagnarLab is a Rust consultancy based in Stuttgart, Germany. We provide Rust development from prototype to product, helping you write safer software. [Interested in Rust? Get in touch with us.](https://ragnarlab.com)
