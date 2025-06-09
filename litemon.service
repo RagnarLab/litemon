@@ -1,0 +1,14 @@
+[Unit]
+Description=LiteMon - lightweight metrics collector for Linux
+After=local-fs.target network-online.target systemd-resolved.service
+
+[Service]
+ExecStart=/usr/bin/litemon /etc/litemon/config.kdl
+Type=exec
+Restart=on-failure
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=read-only
+
+[Install]
+WantedBy=multi-user.target
