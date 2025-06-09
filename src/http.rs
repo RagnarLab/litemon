@@ -1,7 +1,11 @@
 //! Lightweight HTTP server for serving metrics.
 
+use std::convert::Infallible;
+
 use anyhow::{Context, Result};
+use http::{header, HeaderValue, StatusCode};
 use http_body_util::combinators::BoxBody;
+use http_body_util::{BodyExt, Full};
 use hyper::body::Bytes;
 use hyper::service::service_fn;
 use hyper::{body::Incoming, Request, Response};
@@ -10,14 +14,25 @@ use smol_hyper::rt::{FuturesIo, SmolTimer};
 use crate::collector::Collector;
 use crate::http_utils::{internal_server_error, not_found};
 
-async fn serve_metrics(_collector: &Collector) -> Result<Response<BoxBody<Bytes, hyper::Error>>> {
-    Err(anyhow::anyhow!("no"))
+async fn serve_metrics(collector: &Collector) -> Result<Response<BoxBody<Bytes, Infallible>>> {
+    let metrics = collector.collect_and_encode().await?.into_bytes();
+    let buf = Bytes::from(metrics);
+
+    let body = Full::new(buf).boxed();
+    let mut res = Response::new(body);
+    *res.status_mut() = StatusCode::OK;
+    res.headers_mut().insert(
+        header::SERVER,
+        HeaderValue::from_str(&format!("litemon/{}", env!("CARGO_PKG_VERSION")))?,
+    );
+
+    Ok(res)
 }
 
 async fn serve_request(
     collector: Collector,
     req: Request<Incoming>,
-) -> Result<Response<BoxBody<Bytes, hyper::Error>>> {
+) -> Result<Response<BoxBody<Bytes, Infallible>>> {
     use hyper::Method;
 
     match (req.method(), req.uri().path()) {
@@ -40,21 +55,6 @@ async fn handle_client(collector: Collector, stream: smol::net::TcpStream) -> an
         .timer(SmolTimer::new())
         .serve_connection(FuturesIo::new(stream), service)
         .await?;
-
-    // try_parse_http(stream, |mut stream| async move {
-    //     // let futs: Vec<_> = metrics.iter().map(|metric| metric.collect()).collect();
-    //     // let _results = join_all(futs).await;
-
-    //     // let mut buf = String::with_capacity(2048);
-    //     // encode(&mut buf, &registry)?;
-
-    //     stream.write_all(b"HTTP/1.1 200 OK\n").await?;
-    //     stream.write_all(b"Server: litemon\n\n").await?;
-    //     // stream.write_all(buf.as_bytes()).await?;
-
-    //     Ok::<(), anyhow::Error>(())
-    // })
-    // .await?;
 
     Ok(())
 }

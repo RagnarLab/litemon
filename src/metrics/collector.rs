@@ -1,6 +1,6 @@
 //! Collectors for all supported metrics.
 
-use std::sync::atomic::{AtomicU32, AtomicU64};
+use std::sync::atomic::{AtomicBool, AtomicU32, AtomicU64};
 
 use anyhow::Result;
 use prometheus_client::encoding::EncodeLabelSet;
@@ -54,6 +54,7 @@ pub struct CpuStatsCollector {
     cpu_usage_overall: Gauge<f64, AtomicU64>,
     cpu_usage_per_core: Family<CpuCoreLabels, Gauge<f64, AtomicU64>>,
     last_cpu_snapshot: Mutex<Option<CpuUsage>>,
+    load_avg_enabled: AtomicBool,
 }
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, EncodeLabelSet)]
@@ -70,36 +71,46 @@ impl Default for CpuStatsCollector {
             cpu_usage_overall: Gauge::default(),
             cpu_usage_per_core: Family::default(),
             last_cpu_snapshot: Mutex::new(None),
+            load_avg_enabled: AtomicBool::new(false),
         }
     }
 }
 
 impl Metric for CpuStatsCollector {
-    fn init(&self, _options: hashbrown::HashMap<String, String>) -> DynFuture<'_, Result<()>> {
+    fn init(&self, options: hashbrown::HashMap<String, String>) -> DynFuture<'_, Result<()>> {
         Box::pin(async move {
             let initial_snapshot = CpuUsage::now().await?;
             *self.last_cpu_snapshot.lock().await = Some(initial_snapshot);
+            self.load_avg_enabled.store(
+                options.get("load_avg_enabled").is_some_and(|b| b == "true"),
+                std::sync::atomic::Ordering::SeqCst,
+            );
 
             Ok(())
         })
     }
 
     fn register(&self, registry: &mut prometheus_client::registry::Registry) {
-        registry.register(
-            "litemon_load_avg_1m",
-            "Load average over 1 minute",
-            self.load_avg_1m.clone(),
-        );
-        registry.register(
-            "litemon_load_avg_5m",
-            "Load average over 5 minutes",
-            self.load_avg_5m.clone(),
-        );
-        registry.register(
-            "litemon_load_avg_15m",
-            "Load average over 15 minutes",
-            self.load_avg_15m.clone(),
-        );
+        if self
+            .load_avg_enabled
+            .load(std::sync::atomic::Ordering::Acquire)
+        {
+            registry.register(
+                "litemon_load_avg_1m",
+                "Load average over 1 minute",
+                self.load_avg_1m.clone(),
+            );
+            registry.register(
+                "litemon_load_avg_5m",
+                "Load average over 5 minutes",
+                self.load_avg_5m.clone(),
+            );
+            registry.register(
+                "litemon_load_avg_15m",
+                "Load average over 15 minutes",
+                self.load_avg_15m.clone(),
+            );
+        }
         registry.register(
             "litemon_cpu_usage_overall",
             "Overall CPU usage percentage (0.0-1.0)",
@@ -115,9 +126,14 @@ impl Metric for CpuStatsCollector {
     fn collect(&self) -> DynFuture<'_, Result<()>> {
         Box::pin(async move {
             let load_avg = LoadAverages::current().await?;
-            self.load_avg_1m.set(load_avg.one as f64);
-            self.load_avg_5m.set(load_avg.five as f64);
-            self.load_avg_15m.set(load_avg.fifteen as f64);
+            if self
+                .load_avg_enabled
+                .load(std::sync::atomic::Ordering::Acquire)
+            {
+                self.load_avg_1m.set(load_avg.one as f64);
+                self.load_avg_5m.set(load_avg.five as f64);
+                self.load_avg_15m.set(load_avg.fifteen as f64);
+            }
 
             let current_snapshot = CpuUsage::now().await?;
             if let Some(prev_snapshot) = self.last_cpu_snapshot.lock().await.as_ref() {

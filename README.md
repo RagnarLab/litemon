@@ -67,6 +67,20 @@ prometheus.scrape "litemon_exporter" {
 |          Metric Name          | Metric Type |          Description          |        Cardinality        |
 | ----------------------------- | ----------- | ----------------------------- | ------------------------- |
 | litemon_mem_used_percentage   | Gauge       | Memory used in percent (0-1)  | 1 per host                |
+| litemon_load_avg_1m           | Gauge       | Load average over 1 minute.   | 1 per host |
+| litemon_load_avg_5m           | Gauge       | Load average over 5 minutes.  | 1 per host |
+| litemon_load_avg_15m          | Gauge       | Load average over 15 minutes. | 1 per host |
+| litemon_cpu_usage_overall     | Gauge       | Overall CPU usage percentage (0.0-1.0). | 1 per host |
+| litemon_cpu_usage_per_core    | Gauge       | Per-core CPU usage percentage (0.0-1.0). | 1 per cpu core |
+| litemon_mem_used_percentage   | Gauge       | Memory used (0.0-1.0) in percent. | 1 per host |
+| litemon_systemd_unit_state    | Gauge       | Systemd unit state (1 for current state, 0 otherwise). | 1 per service, 1 per state, 8 states |
+| litemon_net_bytes_received    | Counter     | Network bytes received.       | 1 per host, 1 per network interface |
+| litemon_net_errors_received   | Counter     | Network errors received.      | 1 per host, 1 per network interface |
+| litemon_net_bytes_sent        | Counter     | Network bytes sent.           | 1 per host, 1 per network interface |
+| litemon_net_errors_sent       | Counter     | Network errors sent.          | 1 per host, 1 per network interface |
+| litemon_fs_usage_ratio        | Gauge       | Filesystem usage ratio (0.0-1.0). | 1 per host, 1 per mount point |
+# EOF
+
 
 ## Support
 

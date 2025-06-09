@@ -93,7 +93,6 @@ impl UserConfig {
             .await
             .with_context(|| format!("reading config file: {}", path.as_ref().display()))?;
         let doc: KdlDocument = docstr.parse().context("parsing config file")?;
-        dbg!(&doc);
 
         let extract_metrics = |node: &KdlNode| -> MetricsConfig {
             let mut ret = MetricsConfig::default();

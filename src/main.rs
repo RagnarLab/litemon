@@ -19,11 +19,19 @@ fn main() {
 /// Real, asynchronous entrypoint.
 async fn async_main(_ex: &Rc<smol::LocalExecutor<'_>>) {
     let args = CliArgs::from_env().expect("invalid args");
-    let _config = UserConfig::from_path(&args.config_path)
+    let config = UserConfig::from_path(&args.config_path)
         .await
         .expect("invalid config");
 
     let collector = Collector::new();
+    collector
+        .create_from_config(&config)
+        .await
+        .expect("creating collectors failed");
+    collector
+        .register()
+        .await
+        .expect("registering metrics failed");
 
     http::listen(collector.clone(), &args.listen_address, args.listen_port)
         .await
