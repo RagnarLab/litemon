@@ -1,6 +1,7 @@
 //! Command-line Arguments.
 
 use std::path::PathBuf;
+use std::process::exit;
 
 use anyhow::Result;
 
@@ -43,6 +44,14 @@ impl CliArgs {
         let mut parser = lexopt::Parser::from_iter(it);
         while let Some(arg) = parser.next()? {
             match arg {
+                Short('h') | Long("help") => {
+                    Self::print_help();
+                    exit(0);
+                }
+                Short('V') | Long("version") => {
+                    Self::print_version();
+                    exit(0);
+                }
                 Short('n') | Long("listen") => {
                     ret.listen_address = parser.value()?.to_string_lossy().to_string();
                 }
@@ -57,6 +66,24 @@ impl CliArgs {
         }
 
         Ok(ret)
+    }
+
+    /// Print help to stdout.
+    fn print_help() {
+        println!("litemon - A very minimal and lightweight metric collector for Linux systems.");
+        println!();
+        println!("Usage: litemon [OPTIONS] [PATH-TO-CONFIG]");
+        println!();
+        println!("Options:");
+        println!("-n, --listen          IP address to listen. Default: 127.0.0.1");
+        println!("-P, --port            Port to listen. Default: 9774");
+        println!("-V, --version         Print version info and exit");
+        println!("-h, --help            Print help and exit");
+    }
+
+    /// Print version to stdout.
+    fn print_version() {
+        println!("litemon - v{}", env!("CARGO_PKG_VERSION"));
     }
 }
 
