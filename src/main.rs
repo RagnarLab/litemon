@@ -33,6 +33,15 @@ async fn async_main(_ex: &Rc<smol::LocalExecutor<'_>>) {
         .await
         .expect("registering metrics failed");
 
+    // Figlet font: Slant
+    // Alternatives: Standard, Big
+    println!(r"    __    _ __       __  ___          ");
+    println!(r"   / /   (_) /____  /  |/  /___  ____ ");
+    println!(r"  / /   / / __/ _ \/ /|_/ / __ \/ __ \");
+    println!(r" / /___/ / /_/  __/ /  / / /_/ / / / /");
+    println!(r"/_____/_/\__/\___/_/  /_/\____/_/ /_/ ");
+    println!(r"                                      ");
+
     http::listen(collector.clone(), &args.listen_address, args.listen_port)
         .await
         .unwrap();
