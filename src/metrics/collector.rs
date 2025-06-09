@@ -23,7 +23,7 @@ pub struct MemoryStatsCollector {
 }
 
 impl Metric for MemoryStatsCollector {
-    fn init(&self, _options: hashbrown::HashMap<String, String>) -> DynFuture<Result<()>> {
+    fn init(&self, _options: hashbrown::HashMap<String, String>) -> DynFuture<'_, Result<()>> {
         Box::pin(async move { Ok(()) })
     }
 
@@ -36,7 +36,7 @@ impl Metric for MemoryStatsCollector {
         );
     }
 
-    fn collect(&self) -> DynFuture<Result<()>> {
+    fn collect(&self) -> DynFuture<'_, Result<()>> {
         Box::pin(async move {
             let stats = MemoryStats::current().await?;
             self.gauge.set(stats.used_percent);
@@ -75,7 +75,7 @@ impl Default for CpuStatsCollector {
 }
 
 impl Metric for CpuStatsCollector {
-    fn init(&self, _options: hashbrown::HashMap<String, String>) -> DynFuture<Result<()>> {
+    fn init(&self, _options: hashbrown::HashMap<String, String>) -> DynFuture<'_, Result<()>> {
         Box::pin(async move {
             let initial_snapshot = CpuUsage::now().await?;
             *self.last_cpu_snapshot.lock().await = Some(initial_snapshot);
@@ -112,7 +112,7 @@ impl Metric for CpuStatsCollector {
         );
     }
 
-    fn collect(&self) -> DynFuture<Result<()>> {
+    fn collect(&self) -> DynFuture<'_, Result<()>> {
         Box::pin(async move {
             let load_avg = LoadAverages::current().await?;
             self.load_avg_1m.set(load_avg.one as f64);
@@ -155,7 +155,7 @@ struct FilesystemLabels {
 }
 
 impl Metric for FilesystemStatsCollector {
-    fn init(&self, options: hashbrown::HashMap<String, String>) -> DynFuture<Result<()>> {
+    fn init(&self, options: hashbrown::HashMap<String, String>) -> DynFuture<'_, Result<()>> {
         Box::pin(async move {
             let mountpoints = if let Some(mountpoints_str) = options.get("mountpoints") {
                 mountpoints_str
@@ -179,7 +179,7 @@ impl Metric for FilesystemStatsCollector {
         );
     }
 
-    fn collect(&self) -> DynFuture<Result<()>> {
+    fn collect(&self) -> DynFuture<'_, Result<()>> {
         Box::pin(async move {
             let mountpoints = self.mountpoints.lock().await;
 
@@ -226,7 +226,7 @@ struct NetworkLabels {
 }
 
 impl Metric for NetworkStatsCollector {
-    fn init(&self, options: hashbrown::HashMap<String, String>) -> DynFuture<Result<()>> {
+    fn init(&self, options: hashbrown::HashMap<String, String>) -> DynFuture<'_, Result<()>> {
         Box::pin(async move {
             let interfaces = if let Some(interfaces_str) = options.get("interfaces") {
                 interfaces_str
@@ -266,7 +266,7 @@ impl Metric for NetworkStatsCollector {
         );
     }
 
-    fn collect(&self) -> DynFuture<Result<()>> {
+    fn collect(&self) -> DynFuture<'_, Result<()>> {
         Box::pin(async move {
             let interfaces = self.interfaces.lock().await;
             let network_stats = NetworkStats::all().await?;
@@ -329,7 +329,7 @@ impl Default for SystemdUnitStateCollector {
 }
 
 impl Metric for SystemdUnitStateCollector {
-    fn init(&self, options: hashbrown::HashMap<String, String>) -> DynFuture<Result<()>> {
+    fn init(&self, options: hashbrown::HashMap<String, String>) -> DynFuture<'_, Result<()>> {
         Box::pin(async move {
             // Parse units from options
             let units = if let Some(units_str) = options.get("units") {
@@ -355,7 +355,7 @@ impl Metric for SystemdUnitStateCollector {
         );
     }
 
-    fn collect(&self) -> DynFuture<Result<()>> {
+    fn collect(&self) -> DynFuture<'_, Result<()>> {
         Box::pin(async move {
             let units = self.units.lock().await;
 
