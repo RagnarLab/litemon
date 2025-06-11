@@ -42,7 +42,7 @@ opt-level = 3
 
 [dependencies]
 anyhow = "1"
-hashbrown = "0.15"
+hashbrown = ">=0.15.1"
 lexopt = "0.3"
 
 # Async runtimes & utilities
