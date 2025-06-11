@@ -3,7 +3,7 @@ metrics {
   loadavg enabled=#true
   memory_used enabled=#true
   systemd_unit_state enabled=#true {
-    units "valkey.service" "postgresql.service"
+    units "docker.service"
   }
   network_throughput enabled=#true {
     interfaces "eth0" "lo"
