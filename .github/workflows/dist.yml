@@ -62,8 +62,8 @@ jobs:
           cargo nfpm p --target ${{ matrix.target }} --no-build -f deb
           cargo nfpm p --target ${{ matrix.target }} --no-build -f rpm
           mkdir -p dist-packages
-          cp "target/${{ matrix.taregt }}/release/*.deb" "dist-packages/"
-          cp "target/${{ matrix.taregt }}/release/*.rpm" "dist-packages/"
+          cp "target/${{ matrix.target }}/release/*.deb" "dist-packages/"
+          cp "target/${{ matrix.target }}/release/*.rpm" "dist-packages/"
           ls -lah dist-packages/*
         if: contains(matrix.target, 'musl')
       - name: Archive
@@ -86,7 +86,7 @@ jobs:
       - name: Upload packages
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.target }}-debug
+          name: ${{ matrix.target }}-packages
           path: dist-packages
         if: contains(matrix.target, 'musl')
       - name: Upload debug artifacts
@@ -101,4 +101,6 @@ jobs:
           files: |
             dist/litemon-${{ matrix.target }}.tar.gz
             dist-debuginfo/litemon-${{ matrix.target }}-debug.tar.gz
+            dist-packages/*.deb
+            dist-packages/*.rpm
         if: github.ref_type == 'tag'
