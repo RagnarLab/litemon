@@ -6,8 +6,8 @@
   <p>
 
 [![Build Status](https://github.com/ragnarlab/litemon/actions/workflows/ci.yml/badge.svg)](https://github.com/ragnarlab/litemon/actions)
-[![Crates.io](https://img.shields.io/crates/v/litemon.svg)](https://crates.io/crates/litemon)
-![License](https://img.shields.io/crates/l/litemon.svg)
+[![dependency status](https://deps.rs/repo/github/RagnarLab/litemon/status.svg)](https://deps.rs/repo/github/RagnarLab/litemon)
+![GitHub License](https://img.shields.io/github/license/RagnarLab/litemon)
 </div>
 
 LiteMon allows lightweight monitoring of Linux nodes (VM, bare-metal, etc.).
@@ -22,6 +22,12 @@ LiteMon is written in Rust, and uses the
 
 
 ## Installation
+
+**Latest version:**
+
+```
+0.1.0
+```
 
 ### Ubuntu/Debian
 
