@@ -13,9 +13,9 @@
 LiteMon allows lightweight monitoring of Linux nodes (VM, bare-metal, etc.).
 LiteMon is carefully crafted to use as little resources as possible.
 
-LiteMon is using less than 1 MiB of RAM, the binary size is less than 5 MB, and
-uses very little I/O and CPU. Binaries are built with the musl libc and have no
-external dependencies.
+LiteMon is using less than 5 MiB of RAM (99th percentile), the binary size is
+less than 5 MB, and uses very little I/O and CPU. Binaries are built with the
+musl libc and have no external dependencies.
 
 LiteMon is written in Rust, and uses the
 [Smol](https://github.com/smol-rs/smol) async runtime.
@@ -23,9 +23,82 @@ LiteMon is written in Rust, and uses the
 
 ## Installation
 
+### Ubuntu/Debian
+
+```bash
+# Install litemon
+sudo dpkg -i $(curl -w "%{filename_effective}" -SsLO "https://github.com/RagnarLab/litemon/releases/download/0.1.0/litemon-0.1.0-1.$(uname -m).deb")
+
+# Configure litemon
+sudo mv /etc/litemon/config.kdl.example /etc/litemon/config.kdl
+sudo $EDITOR /etc/litemon/config.kdl
+
+# Restart litemon
+sudo systemctl restart litemon
+```
+
+### RHEL/Fedora/CentOS Stream
+
+```bash
+# Install litemon
+sudo yum -iv "https://github.com/RagnarLab/litemon/releases/download/0.1.0/litemon-0.1.0-1.$(uname -m).rpm"
+
+# Configure litemon
+sudo mv /etc/litemon/config.kdl.example /etc/litemon/config.kdl
+sudo $EDITOR /etc/litemon/config.kdl
+
+# Restart litemon
+sudo systemctl restart litemon
+```
+
+## Configuration
+
+By default, `litemon` reads the configuration from `/etc/litemon/config.kdl`.
+The configuration is written in [KDL](https://kdl.dev/).
+
+```kdl
+metrics {
+  cpu_seconds enabled=#true period_ms=200
+
+  loadavg enabled=#true
+
+  memory_used enabled=#true
+
+  systemd_unit_state enabled=#true {
+    // List all the units to monitor.
+    units "docker.service"
+  }
+
+  network_throughput enabled=#true {
+    // List all interfaces to monitor
+    interfaces \
+        "eth0" \
+        "lo"
+  }
+
+  disk_usage enabled=#true {
+    mountpoints "/"
+  }
+}
+```
+
+
+## CLI
+
+```
+Usage: litemon [OPTIONS] [PATH-TO-CONFIG]
+
+Options:
+-n, --listen          IP address to listen. Default: 127.0.0.1
+-P, --port            Port to listen. Default: 9774
+-V, --version         Print version info and exit
+-h, --help            Print help and exit
+```
+
+
 ## Using with alloy
 
-You can easily use litemon with [Grafana Alloy](https://grafana.com/docs/alloy/latest/).
+You can easily use `litemon` with [Grafana Alloy](https://grafana.com/docs/alloy/latest/).
 
 ```
 // config.alloy
@@ -79,7 +152,6 @@ prometheus.scrape "litemon_exporter" {
 | litemon_net_bytes_sent        | Counter     | Network bytes sent.           | 1 per host, 1 per network interface |
 | litemon_net_errors_sent       | Counter     | Network errors sent.          | 1 per host, 1 per network interface |
 | litemon_fs_usage_ratio        | Gauge       | Filesystem usage ratio (0.0-1.0). | 1 per host, 1 per mount point |
-# EOF
 
 
 ## Support
