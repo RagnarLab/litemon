@@ -4,10 +4,10 @@ After=local-fs.target network-online.target systemd-resolved.service
 
 [Service]
 ExecStart=/usr/bin/litemon /etc/litemon/config.kdl
-Type=exec
+Type=simple
 Restart=on-failure
 PrivateTmp=yes
-ProtectSystem=strict
+ProtectSystem=full
 ProtectHome=read-only
 
 [Install]
