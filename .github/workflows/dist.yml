@@ -34,6 +34,8 @@ jobs:
           components: llvm-tools
       - name: Install cargo-binutils
         run: cargo install cargo-binutils
+      - name: Install cargo-nfpm
+        run: cargo install --locked cargo-nfpm
       - name: Install GCC arm64 (linux)
         if: startsWith(matrix.target, 'aarch64-unknown-linux')
         run: sudo apt-get update && sudo apt-get install gcc-aarch64-linux-gnu
@@ -50,16 +52,26 @@ jobs:
       - name: Strip debug info
         shell: bash
         run: |
-          ./extras/strip.sh target/${{ matrix.target }}/release/minimon
+          ./extras/strip.sh target/${{ matrix.target }}/release/litemon
+      - name: Create packages
+        shell: bash
+        run: |
+          cargo nfpm p --target ${{ matrix.target }} --no-build -f deb
+          cargo nfpm p --target ${{ matrix.target }} --no-build -f rpm
+          mkdir -p dist-packages
+          cp "target/${{ matrix.taregt }}/release/*.deb" "dist-packages/"
+          cp "target/${{ matrix.taregt }}/release/*.rpm" "dist-packages/"
+          ls -lah dist-packages/*
+        if: contains(matrix.target, 'musl')
       - name: Archive
         shell: bash
         run: |
-          binary="target/${{ matrix.target }}/release/minimon"
-          archive="minimon-${{ matrix.target }}"
+          binary="target/${{ matrix.target }}/release/litemon"
+          archive="litemon-${{ matrix.target }}"
           buildid=$(rust-objcopy --dump-section .note.gnu.build-id=/dev/stdout "$binary" | cat | tail -c+17 | od -An -v -tx1 | tr -d ' \n')
           mkdir -p dist
           mkdir -p dist-debuginfo
-          tar czf "dist/${archive}.tar.gz" -C target/${{ matrix.target }}/release minimon
+          tar czf "dist/${archive}.tar.gz" -C target/${{ matrix.target }}/release litemon
           tar czf "dist-debuginfo/${archive}-debug.tar.gz" -C target/${{ matrix.target }}/release "${buildid}.debug"
           ls -lah dist/*
           ls -lah dist-debuginfo/*
@@ -68,6 +80,12 @@ jobs:
         with:
           name: ${{ matrix.target }}
           path: dist
+      - name: Upload packages
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.target }}-debug
+          path: dist-packages
+        if: contains(matrix.target, 'musl')
       - name: Upload debug artifacts
         uses: actions/upload-artifact@v4
         with:
@@ -78,6 +96,6 @@ jobs:
         with:
           prerelease: true
           files: |
-            dist/minimon-${{ matrix.target }}.tar.gz
-            dist-debuginfo/minimon-${{ matrix.target }}-debug.tar.gz
+            dist/litemon-${{ matrix.target }}.tar.gz
+            dist-debuginfo/litemon-${{ matrix.target }}-debug.tar.gz
         if: github.ref_type == 'tag'

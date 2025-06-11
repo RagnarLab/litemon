@@ -12,6 +12,12 @@ keywords = ["prometheus", "monitoring", "linux", "grafana"]
 categories = ["command-line-utilities"]
 readme = "README.md"
 
+[package.metadata.nfpm]
+epoch = "1"
+contents = [
+    { src = "./examples/config.kdl", dst = "/etc/litemon/config.kdl.example" },
+]
+
 [profile.dev]
 # This provides only line-tables and not full debug information necessary for
 # debugging under `gcc` or `lldb`. Turn this to "full" (or 2) when full debug
