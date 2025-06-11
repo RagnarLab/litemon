@@ -64,6 +64,12 @@ jobs:
           mkdir -p dist-packages
           cp "target/${{ matrix.target }}/release/"*.deb "dist-packages/"
           cp "target/${{ matrix.target }}/release/"*.rpm "dist-packages/"
+          if [ -f dist/litemon*_amd64.deb ]; then
+            mv dist/litemon*_amd64.deb $(echo dist/litemon*_amd64.deb | sed 's/litemon_\(.\+\)_amd64.deb/litemon-\1.x86_64.deb/g')
+          fi
+          if [ -f dist/litemon*_arm64.deb ]; then
+            mv dist/litemon*_arm64.deb $(echo dist/litemon*_arm64.deb | sed 's/litemon_\(.\+\)_amd64.deb/litemon-\1.aarch64.deb/g')
+          fi
           ls -lah dist-packages/*
         if: contains(matrix.target, 'musl')
       - name: Archive
