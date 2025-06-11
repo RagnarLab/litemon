@@ -57,14 +57,14 @@ fn parse_args_long() {
 fn has_help() {
     assert_cmd::Command::cargo_bin("litemon")
         .unwrap()
-        .args(&["-h"])
+        .args(["-h"])
         .assert()
         .success()
         .stdout(contains("Usage"));
 
     assert_cmd::Command::cargo_bin("litemon")
         .unwrap()
-        .args(&["--help"])
+        .args(["--help"])
         .assert()
         .success()
         .stdout(contains("Usage"));
@@ -74,14 +74,14 @@ fn has_help() {
 fn has_version() {
     assert_cmd::Command::cargo_bin("litemon")
         .unwrap()
-        .args(&["-V"])
+        .args(["-V"])
         .assert()
         .success()
         .stdout(contains("litemon"));
 
     assert_cmd::Command::cargo_bin("litemon")
         .unwrap()
-        .args(&["--version"])
+        .args(["--version"])
         .assert()
         .success()
         .stdout(contains("litemon"));
