@@ -62,8 +62,8 @@ jobs:
           cargo nfpm p --target ${{ matrix.target }} --no-build -f deb
           cargo nfpm p --target ${{ matrix.target }} --no-build -f rpm
           mkdir -p dist-packages
-          cp "target/${{ matrix.target }}/release/*.deb" "dist-packages/"
-          cp "target/${{ matrix.target }}/release/*.rpm" "dist-packages/"
+          cp "target/${{ matrix.target }}/release/"*.deb "dist-packages/"
+          cp "target/${{ matrix.target }}/release/"*.rpm "dist-packages/"
           ls -lah dist-packages/*
         if: contains(matrix.target, 'musl')
       - name: Archive
