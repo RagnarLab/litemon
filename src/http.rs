@@ -35,6 +35,7 @@ async fn serve_request(
 ) -> Result<Response<BoxBody<Bytes, Infallible>>> {
     use hyper::Method;
 
+    dbg!(&req);
     match (req.method(), req.uri().path()) {
         (&Method::GET, "/metrics") => {
             let res = serve_metrics(&collector)
@@ -76,11 +77,12 @@ pub async fn listen(
 
     loop {
         let (stream, _addr) = listener.accept().await.context("accepting connection")?;
+        dbg!(&_addr);
 
         let collector = collector.clone();
         smol::spawn(async move {
             if let Err(err) = handle_client(collector, stream).await {
-                eprintln!("error: serving request: {err}");
+                eprintln!("error: serving request: {err:?}");
             }
         })
         .detach();
