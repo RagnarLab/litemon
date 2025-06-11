@@ -35,7 +35,7 @@ async fn async_main(_ex: &Rc<smol::LocalExecutor<'_>>) {
 
     // Figlet font: Standard
     // Alternatives: Sland, Big
-    println!(r" _     _ _       __  __");
+    println!(r"._.    _ _       __  __");
     println!(r"| |   (_) |_ ___|  \/  | ___  _ __");
     println!(r"| |   | | __/ _ \ |\/| |/ _ \| '_ \");
     println!(r"| |___| | ||  __/ |  | | (_) | | | |");
