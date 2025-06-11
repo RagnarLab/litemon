@@ -33,7 +33,7 @@ LiteMon is written in Rust, and uses the
 
 ```bash
 # Install litemon
-sudo dpkg -i $(curl -w "%{filename_effective}" -SsLO "https://github.com/RagnarLab/litemon/releases/download/0.1.0/litemon-0.1.0-1.$(uname -m).deb")
+sudo dpkg -i $(curl -w "%{filename_effective}" -SsLO "https://github.com/RagnarLab/litemon/releases/download/v0.1.0/litemon-0.1.0-1.$(uname -m).deb")
 
 # Configure litemon
 sudo mv /etc/litemon/config.kdl.example /etc/litemon/config.kdl
@@ -47,7 +47,7 @@ sudo systemctl restart litemon
 
 ```bash
 # Install litemon
-sudo yum -iv "https://github.com/RagnarLab/litemon/releases/download/0.1.0/litemon-0.1.0-1.$(uname -m).rpm"
+sudo rpm -iv "https://github.com/RagnarLab/litemon/releases/download/v0.1.0/litemon-0.1.0-1.$(uname -m).rpm"
 
 # Configure litemon
 sudo mv /etc/litemon/config.kdl.example /etc/litemon/config.kdl
