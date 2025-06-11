@@ -16,6 +16,7 @@ readme = "README.md"
 epoch = "1"
 contents = [
     { src = "./examples/config.kdl", dst = "/etc/litemon/config.kdl.example" },
+    { src = "./litemon.service", dst = "/etc/systemd/system/litemon.service" },
 ]
 
 [profile.dev]
