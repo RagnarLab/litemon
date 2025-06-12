@@ -89,7 +89,7 @@ impl Default for MetricsConfig {
 impl UserConfig {
     /// Load the configuratin from the `path` specified.
     pub async fn from_path<P: AsRef<Path>>(path: P) -> anyhow::Result<Self> {
-        let docstr = smol::fs::read_to_string(path.as_ref())
+        let docstr = tokio::fs::read_to_string(path.as_ref())
             .await
             .with_context(|| format!("reading config file: {}", path.as_ref().display()))?;
         let doc: KdlDocument = docstr.parse().context("parsing config file")?;

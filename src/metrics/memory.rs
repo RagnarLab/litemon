@@ -11,11 +11,11 @@ use procfs::Current;
 /// # Returns
 /// The percentage of memory used (0.0 to 1.0) or an error if memory information cannot be read.
 pub async fn get_memory_used_percentage() -> Result<f64> {
-    let meminfo = smol::unblock(|| {
+    let meminfo = tokio::task::spawn_blocking(|| {
         let ret = procfs::Meminfo::current().context("reading /proc/meminfo")?;
         Ok::<procfs::Meminfo, anyhow::Error>(ret)
     })
-    .await?;
+    .await??;
     let total_kb = meminfo.mem_total;
 
     // Linux reports "available" memory which is an estimate of how much memory
@@ -66,11 +66,11 @@ impl MemoryStats {
     /// # Returns
     /// An object containing detailed memory statistics or an error.
     pub async fn current() -> Result<Self> {
-        let meminfo = smol::unblock(|| {
+        let meminfo = tokio::task::spawn_blocking(|| {
             let ret = procfs::Meminfo::current().context("reading /proc/meminfo")?;
             Ok::<procfs::Meminfo, anyhow::Error>(ret)
         })
-        .await?;
+        .await??;
 
         let total_kb = meminfo.mem_total;
         let free_kb = meminfo.mem_free;

@@ -46,14 +46,12 @@ hashbrown = ">=0.15.1"
 lexopt = "0.3"
 
 # Async runtimes & utilities
-smol = "2"
-smol-hyper = "0.1"
-easy-parallel = "3"
-tokio = { version = "1.45", default-features = false, features = ["net", "rt", "rt-multi-thread", "time"] }
+tokio = { version = "1.45", default-features = false, features = ["net", "rt", "rt-multi-thread", "time", "fs", "tracing", "full"] }
+hyper-util = { version = "0.1.14", features = ["http1", "server", "tokio", "tracing", "full"] }
 futures = "0.3"
 
 # HTTP
-hyper = { version = "1", default-features = false, features = ["http1", "server"] }
+hyper = { version = "1", default-features = false, features = ["http1", "server", "tracing", "full"] }
 http-body-util = "0.1"
 http = "1.3"
 
@@ -61,7 +59,7 @@ http = "1.3"
 kdl = "6.3"
 
 # Required for systemd metrics.
-zbus = { version = "5.3", default-features = false, features = [] }
+zbus = { version = "5.3", default-features = true, features = ["tokio"] }
 zbus_systemd = { version = "0.25701", default-features = false, features = ["systemd1"] }
 # Required for cpu/memory metrics.
 procfs = "0.17"
@@ -71,8 +69,8 @@ nix = { version = "0.30", features = ["fs"] }
 prometheus-client = { version = "0.23", default-features = false }
 
 # Tracing
-tracing = "0.1"
-tracing-subscriber = { version = "0.3", features = ["tracing-log"] }
+tracing = { version = "0.1", features = ["log-always"] }
+tracing-subscriber = { version = "0.3", features = ["tracing-log", "env-filter"] }
 
 # Allocator
 tikv-jemallocator = "0.6"

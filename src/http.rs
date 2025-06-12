@@ -9,8 +9,7 @@ use http_body_util::{BodyExt, Full};
 use hyper::body::Bytes;
 use hyper::service::service_fn;
 use hyper::{body::Incoming, Request, Response};
-use smol::io::AsyncWriteExt;
-use smol_hyper::rt::{FuturesIo, SmolTimer};
+use hyper_util::rt::{TokioIo, TokioTimer};
 
 use crate::collector::Collector;
 use crate::http_utils::{internal_server_error, not_found};
@@ -53,17 +52,19 @@ async fn serve_request(
         //     dbg!(&res);
         //     Ok(res)
         // }
-
         (_, _) => Ok(not_found()),
     }
 }
 
-async fn handle_client(collector: Collector, mut stream: smol::net::TcpStream) -> anyhow::Result<()> {
+async fn handle_client(
+    collector: Collector,
+    mut stream: tokio::net::TcpStream,
+) -> anyhow::Result<()> {
     let service = service_fn(move |req| serve_request(collector.clone(), req));
 
     hyper::server::conn::http1::Builder::new()
-        .timer(SmolTimer::new())
-        .serve_connection(FuturesIo::new(stream), service)
+        .timer(TokioTimer::new())
+        .serve_connection(TokioIo::new(stream), service)
         .await?;
 
     Ok(())
@@ -80,7 +81,7 @@ pub async fn listen(
         .with_context(|| format!("parsing listen addr: {listen_addr}"))?;
     println!("listening on {addr}:{listen_port}");
 
-    let listener = smol::net::TcpListener::bind((addr, listen_port))
+    let listener = tokio::net::TcpListener::bind((addr, listen_port))
         .await
         .with_context(|| format!("bind to {addr}"))?;
 
@@ -89,12 +90,11 @@ pub async fn listen(
         dbg!(&_addr);
 
         let collector = collector.clone();
-        smol::spawn(async move {
+        tokio::task::spawn(async move {
             if let Err(err) = handle_client(collector, stream).await {
                 dbg!(&err);
                 eprintln!("error: serving request: {err:?}");
             }
-        })
-        .detach();
+        });
     }
 }

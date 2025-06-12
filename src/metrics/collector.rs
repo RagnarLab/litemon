@@ -7,7 +7,7 @@ use prometheus_client::encoding::EncodeLabelSet;
 use prometheus_client::metrics::counter::Counter;
 use prometheus_client::metrics::family::Family;
 use prometheus_client::metrics::gauge::Gauge;
-use smol::lock::Mutex;
+use tokio::sync::Mutex;
 
 use super::cpu::{CpuUsage, LoadAverages};
 use super::fs::FilesystemUsage;

@@ -3,7 +3,7 @@ use std::str::FromStr;
 
 use anyhow::Context;
 use hashbrown::HashMap;
-use smol::lock::{RwLock, RwLockUpgradableReadGuard};
+use tokio::sync::RwLock;
 use zbus::zvariant::OwnedObjectPath;
 use zbus_systemd::systemd1::{ManagerProxy, UnitProxy};
 
@@ -116,7 +116,7 @@ impl SystemdUnitState<'_> {
     /// `.service`).
     pub async fn active_state(&self, unit: &str) -> anyhow::Result<ActiveState> {
         let unit_path = {
-            let reader_guard = self.cached_units.upgradable_read().await;
+            let reader_guard = self.cached_units.read().await;
             if reader_guard.contains_key(unit) {
                 reader_guard
                     .get(unit)
@@ -128,7 +128,8 @@ impl SystemdUnitState<'_> {
                     .get_unit(unit.to_owned())
                     .await
                     .with_context(|| format!("finding path to unit: {unit}"))?;
-                let mut writer = RwLockUpgradableReadGuard::upgrade(reader_guard).await;
+                drop(reader_guard);
+                let mut writer = self.cached_units.write().await;
                 writer.insert(unit.to_owned(), unit_path.clone());
                 unit_path
             }

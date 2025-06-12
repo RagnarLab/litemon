@@ -32,9 +32,10 @@ pub struct NetworkStats {
 impl NetworkStats {
     /// Retrieve the network statistics for all currently attached network interfaces.
     pub async fn all() -> Result<Self> {
-        let stats =
-            smol::unblock(|| procfs::net::dev_status().context("reading network device status"))
-                .await?;
+        let stats = tokio::task::spawn_blocking(|| {
+            procfs::net::dev_status().context("reading network device status")
+        })
+        .await??;
 
         let mut ret = Self {
             interfaces: HashMap::new(),
@@ -59,7 +60,7 @@ impl NetworkStats {
     /// Retrieve the network throughput statistics of the specified `period`.
     pub async fn period(period: Duration) -> Result<Self> {
         let stats1 = Self::all().await.context("reading networkstats")?;
-        smol::Timer::after(period).await;
+        tokio::time::sleep(period).await;
         let stats2 = Self::all().await.context("reading networkstats")?;
 
         let mut ret = Self {

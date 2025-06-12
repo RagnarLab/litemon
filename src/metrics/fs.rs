@@ -63,8 +63,10 @@ impl FilesystemUsage {
 
         // Get filesystem statistics using libc's statvfs
         let pathref = mount_point.as_ref().to_owned();
-        let stat =
-            smol::unblock(move || statvfs(&pathref).context("retrieving filesystem stats")).await?;
+        let stat = tokio::task::spawn_blocking(move || {
+            statvfs(&pathref).context("retrieving filesystem stats")
+        })
+        .await??;
 
         // Calculate filesystem metrics
         let block_size = stat.block_size() as u64;
@@ -119,7 +121,9 @@ impl FilesystemUsage {
     /// A tuple of (<fstype>, <mountpoint>) format.
     async fn get_fs_info(mount_point: &str) -> Result<(String, String)> {
         // Use procfs to read mount information
-        let mounts = smol::unblock(|| procfs::mounts().context("reading /proc/mounts")).await?;
+        let mounts =
+            tokio::task::spawn_blocking(|| procfs::mounts().context("reading /proc/mounts"))
+                .await??;
 
         // Find the exact mount point
         for mount in mounts.iter() {
@@ -156,7 +160,8 @@ impl FilesystemUsage {
 /// retrieved.
 pub async fn get_all_filesystems() -> Result<HashMap<String, FilesystemUsage>> {
     let mut ret = HashMap::new();
-    let mounts = smol::unblock(|| procfs::mounts().context("reading /proc/mounts")).await?;
+    let mounts =
+        tokio::task::spawn_blocking(|| procfs::mounts().context("reading /proc/mounts")).await??;
 
     for mount in mounts.iter() {
         let mount_point = &mount.fs_spec;

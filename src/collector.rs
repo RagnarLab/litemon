@@ -8,7 +8,7 @@ use futures::future::join_all;
 use hashbrown::HashMap;
 use prometheus_client::encoding::text::encode;
 use prometheus_client::registry::Registry;
-use smol::lock::RwLock;
+use tokio::sync::RwLock;
 
 use crate::config::UserConfig;
 use crate::metrics::collector::{
