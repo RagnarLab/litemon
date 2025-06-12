@@ -56,6 +56,12 @@ jobs:
         shell: bash
         run: |
           ./extras/strip.sh target/${{ matrix.target }}/release/litemon
+      - name: Save signing key
+        run: |
+          python -c "import os; file = open('private-key.gpg', 'w'); file.write(os.environ['SECRET_PRIVATE_KEY']); file.close()"
+        shell: bash
+        env:
+          SECRET_PRIVATE_KEY : ${{ secrets.PKG_SIGNING_GPG_KEY }}
       - name: Create packages
         shell: bash
         run: |
@@ -72,6 +78,8 @@ jobs:
           fi
           ls -lah dist-packages/*
         if: contains(matrix.target, 'musl')
+        env:
+          NFPM_PASSPHRASE: ${{ secrets.NFPM_PASSPHRASE }}
       - name: Archive
         shell: bash
         run: |
@@ -109,4 +117,5 @@ jobs:
             dist-debuginfo/litemon-${{ matrix.target }}-debug.tar.gz
             dist-packages/*.deb
             dist-packages/*.rpm
+            public-key.gpg
         if: github.ref_type == 'tag'

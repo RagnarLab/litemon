@@ -18,6 +18,14 @@ contents = [
     { src = "./examples/config.kdl", dst = "/etc/litemon/config.kdl.example" },
     { src = "./litemon.service", dst = "/etc/systemd/system/litemon.service" },
 ]
+# Keyid found with:
+# `gpg --list-keys --with-colons <ID-FROM-LIST-KEYS> | awk -F: '/^pub:/ { print $5 }'`
+[package.metadata.nfpm.deb.signature]
+key_file = "private-key.gpg"
+key_id = "44DC37C16135230E"
+[package.metadata.nfpm.rpm.signature]
+key_file = "private-key.gpg"
+key_id = "44DC37C16135230E"
 
 [profile.dev]
 # This provides only line-tables and not full debug information necessary for

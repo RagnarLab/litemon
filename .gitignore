@@ -1,1 +1,7 @@
 /target
+# don't leak our keys
+*.pem
+*.gpg
+*.pgp
+*.asc
+!public-key.gpg
