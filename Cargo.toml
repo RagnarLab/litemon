@@ -22,10 +22,10 @@ contents = [
 # `gpg --list-keys --with-colons <ID-FROM-LIST-KEYS> | awk -F: '/^pub:/ { print $5 }'`
 [package.metadata.nfpm.deb.signature]
 key_file = "private-key.gpg"
-key_id = "44DC37C16135230E"
+key_id = "01C42F3B0C6F2C6376DCCA334568437E29814F91"
 [package.metadata.nfpm.rpm.signature]
 key_file = "private-key.gpg"
-key_id = "44DC37C16135230E"
+key_id = "01C42F3B0C6F2C6376DCCA334568437E29814F91"
 
 [profile.dev]
 # This provides only line-tables and not full debug information necessary for
