@@ -14,7 +14,7 @@ LiteMon allows lightweight monitoring of Linux nodes (VM, bare-metal, etc.).
 LiteMon is carefully crafted to use as little resources as possible.
 
 LiteMon is using less than 5 MiB of RAM (99th percentile), the binary size is
-less than 5 MB, and uses very little I/O and CPU. Binaries are built with the
+less than 10 MB, and uses very little I/O and CPU. Binaries are built with the
 musl libc and have no external dependencies.
 
 LiteMon is written in Rust, and uses the

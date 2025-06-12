@@ -69,7 +69,7 @@ pub async fn listen(
     let addr: std::net::IpAddr = listen_addr
         .parse()
         .with_context(|| format!("parsing listen addr: {listen_addr}"))?;
-    println!("listening on {addr}:{listen_port}");
+    tracing::info!("listening on {addr}:{listen_port}");
 
     let listener = smol::net::TcpListener::bind((addr, listen_port))
         .await
@@ -81,7 +81,7 @@ pub async fn listen(
         let collector = collector.clone();
         smol::spawn(async move {
             if let Err(err) = handle_client(collector, stream).await {
-                eprintln!("error: serving request: {err}");
+                tracing::error!(err = ?err, "error: serving request: {err}");
             }
         })
         .detach();

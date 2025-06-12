@@ -4,12 +4,22 @@ use litemon::args::CliArgs;
 use litemon::collector::Collector;
 use litemon::config::UserConfig;
 use litemon::http;
+use tracing_subscriber::layer::SubscriberExt;
+use tracing_subscriber::util::SubscriberInitExt;
 
 #[global_allocator]
 static GLOBAL_ALLOC: tikv_jemallocator::Jemalloc = tikv_jemallocator::Jemalloc;
 
 /// Synchronous entrypoint into the application.
 fn main() {
+    tracing_subscriber::registry()
+        .with(
+            tracing_subscriber::EnvFilter::try_from_default_env()
+                .unwrap_or_else(|_| format!("{}=debug,zbus=info", env!("CARGO_CRATE_NAME")).into()),
+        )
+        .with(tracing_logfmt::builder().with_timestamp(false).layer())
+        .init();
+
     let ex = Rc::new(smol::LocalExecutor::new());
     smol::block_on(ex.run(async {
         async_main(&ex).await;
@@ -40,6 +50,7 @@ async fn async_main(_ex: &Rc<smol::LocalExecutor<'_>>) {
     println!(r"| |   | | __/ _ \ |\/| |/ _ \| '_ \");
     println!(r"| |___| | ||  __/ |  | | (_) | | | |");
     println!(r"|_____|_|\__\___|_|  |_|\___/|_| |_|");
+    println!();
 
     http::listen(collector.clone(), &args.listen_address, args.listen_port)
         .await
