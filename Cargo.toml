@@ -28,13 +28,14 @@ opt-level = 0
 
 [profile.release]
 incremental = false
-codegen-units = 1
+codegen-units = 3
 strip = "none"
 split-debuginfo = "off"
 overflow-checks = true
 debug-assertions = false
 # Set this to 1 or 2 to get more useful backtraces in debugger.
 debug = "line-tables-only"
+lto = "thin"
 
 # To speed up generation of stacktraces during development.
 [profile.dev.package.backtrace]
