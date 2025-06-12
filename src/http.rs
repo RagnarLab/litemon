@@ -9,22 +9,29 @@ use http_body_util::{BodyExt, Full};
 use hyper::body::Bytes;
 use hyper::service::service_fn;
 use hyper::{body::Incoming, Request, Response};
+use smol::io::AsyncWriteExt;
 use smol_hyper::rt::{FuturesIo, SmolTimer};
 
 use crate::collector::Collector;
 use crate::http_utils::{internal_server_error, not_found};
 
 async fn serve_metrics(collector: &Collector) -> Result<Response<BoxBody<Bytes, Infallible>>> {
+    println!("serve metrics...");
     let metrics = collector.collect_and_encode().await?.into_bytes();
     let buf = Bytes::from(metrics);
+    println!("buf created");
 
     let body = Full::new(buf).boxed();
+    println!("body created");
     let mut res = Response::new(body);
+    println!("res created");
     *res.status_mut() = StatusCode::OK;
+    println!("res status");
     res.headers_mut().insert(
         header::SERVER,
         HeaderValue::from_str(&format!("litemon/{}", env!("CARGO_PKG_VERSION")))?,
     );
+    println!("res header");
 
     Ok(res)
 }
@@ -36,20 +43,22 @@ async fn serve_request(
     use hyper::Method;
 
     dbg!(&req);
+    println!("{:?} {}", req.method(), req.uri().path());
     match (req.method(), req.uri().path()) {
-        (&Method::GET, "/metrics") => {
-            let res = serve_metrics(&collector)
-                .await
-                .inspect_err(|err| eprintln!("error serving metrics request: {err}"))
-                .unwrap_or_else(|_err| internal_server_error());
-            Ok(res)
-        }
+        // (&Method::GET, "/metrics") => {
+        //     let res = serve_metrics(&collector)
+        //         .await
+        //         .inspect_err(|err| eprintln!("error serving metrics request: {err}"))
+        //         .unwrap_or_else(|_err| internal_server_error());
+        //     dbg!(&res);
+        //     Ok(res)
+        // }
 
         (_, _) => Ok(not_found()),
     }
 }
 
-async fn handle_client(collector: Collector, stream: smol::net::TcpStream) -> anyhow::Result<()> {
+async fn handle_client(collector: Collector, mut stream: smol::net::TcpStream) -> anyhow::Result<()> {
     let service = service_fn(move |req| serve_request(collector.clone(), req));
 
     hyper::server::conn::http1::Builder::new()
@@ -82,6 +91,7 @@ pub async fn listen(
         let collector = collector.clone();
         smol::spawn(async move {
             if let Err(err) = handle_client(collector, stream).await {
+                dbg!(&err);
                 eprintln!("error: serving request: {err:?}");
             }
         })

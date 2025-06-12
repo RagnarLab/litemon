@@ -8,6 +8,7 @@ use hyper::Response;
 
 /// Create a HTTP `404 Not Found` response.
 pub(crate) fn not_found() -> Response<BoxBody<Bytes, Infallible>> {
+    println!("not found");
     let mut res = Response::new(
         Empty::<Bytes>::new()
             .map_err(|never| match never {})
@@ -20,6 +21,7 @@ pub(crate) fn not_found() -> Response<BoxBody<Bytes, Infallible>> {
 
 /// Create a HTTP `500 Internal Server Error` response.
 pub(crate) fn internal_server_error() -> Response<BoxBody<Bytes, Infallible>> {
+    println!("internal server error");
     let mut res = Response::new(
         Empty::<Bytes>::new()
             .map_err(|never| match never {})

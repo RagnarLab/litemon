@@ -48,6 +48,8 @@ lexopt = "0.3"
 # Async runtimes & utilities
 smol = "2"
 smol-hyper = "0.1"
+easy-parallel = "3"
+tokio = { version = "1.45", default-features = false, features = ["net", "rt", "rt-multi-thread", "time"] }
 futures = "0.3"
 
 # HTTP
@@ -67,6 +69,10 @@ procfs = "0.17"
 nix = { version = "0.30", features = ["fs"] }
 # Required for outputting metrics in format understood by Prometheus
 prometheus-client = { version = "0.23", default-features = false }
+
+# Tracing
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["tracing-log"] }
 
 # Allocator
 tikv-jemallocator = "0.6"

@@ -1,4 +1,8 @@
-use std::rc::Rc;
+use easy_parallel::Parallel;
+use smol::channel::unbounded;
+use smol::future;
+use std::sync::Arc;
+use tracing::Level;
 
 use litemon::args::CliArgs;
 use litemon::collector::Collector;
@@ -10,14 +14,31 @@ static GLOBAL_ALLOC: tikv_jemallocator::Jemalloc = tikv_jemallocator::Jemalloc;
 
 /// Synchronous entrypoint into the application.
 fn main() {
-    let ex = Rc::new(smol::LocalExecutor::new());
-    smol::block_on(ex.run(async {
-        async_main(&ex).await;
-    }));
+    // let rt = tokio::runtime::Builder::new_current_thread()
+    //     .enable_all()
+    //     .build()
+    //     .expect("building tokio runtime failed");
+    // rt.block_on(async move { async_main().await })
+
+    let ex = Arc::new(smol::Executor::new());
+    let (signal, shutdown) = unbounded::<()>();
+
+    Parallel::new()
+        .each(0..2, |_| future::block_on(ex.run(shutdown.recv())))
+        .finish(|| {
+            future::block_on(async {
+                async_main(ex.clone()).await;
+            })
+        });
 }
 
 /// Real, asynchronous entrypoint.
-async fn async_main(_ex: &Rc<smol::LocalExecutor<'_>>) {
+async fn async_main(_ex: Arc<smol::Executor<'_>>) {
+    tracing_subscriber::fmt::fmt()
+        .compact()
+        .with_max_level(Level::TRACE)
+        .init();
+
     let args = CliArgs::from_env().expect("invalid args");
     let config = UserConfig::from_path(&args.config_path)
         .await

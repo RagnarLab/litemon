@@ -112,6 +112,7 @@ impl Collector {
 
     /// Collect all metrics and return the serialized response in OpenMetrics format as a String.
     pub async fn collect_and_encode(&self) -> Result<String> {
+        println!("collect_and_encode() - 1");
         let inner = self.inner.read().await;
         let futs: Vec<_> = inner
             .metrics
@@ -120,13 +121,16 @@ impl Collector {
             .collect();
         let results = join_all(futs).await;
         for res in results {
+            dbg!(&res);
             res.inspect_err(|err| eprintln!("{err:?}"))
                 .context("collecting metrics")?;
         }
 
         let mut buf = String::with_capacity(2048);
+        println!("collect_and_encode() - 2");
         encode(&mut buf, &inner.registry)?;
 
+        println!("collect_and_encode() - 3");
         Ok(buf)
     }
 }
