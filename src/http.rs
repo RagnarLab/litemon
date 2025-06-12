@@ -52,6 +52,7 @@ async fn handle_client(collector: Collector, stream: smol::net::TcpStream) -> an
     let service = service_fn(move |req| serve_request(collector.clone(), req));
 
     hyper::server::conn::http1::Builder::new()
+        .header_read_timeout(None)
         .timer(SmolTimer::new())
         .serve_connection(FuturesIo::new(stream), service)
         .await?;
