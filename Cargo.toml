@@ -22,12 +22,11 @@ contents = [
 # `gpg --list-keys --with-colons <ID-FROM-LIST-KEYS> | awk -F: '/^pub:/ { print $5 }'`
 [package.metadata.nfpm.deb.signature]
 key_file = "private-key.gpg"
-# https://github.com/goreleaser/nfpm/issues/939
-# key_id = "01C42F3B0C6F2C6376DCCA334568437E29814F91"
+# https://superuser.com/a/769488
+key_id = "4568437E29814F91"
 [package.metadata.nfpm.rpm.signature]
 key_file = "private-key.gpg"
-# https://github.com/goreleaser/nfpm/issues/939
-# key_id = "01C42F3B0C6F2C6376DCCA334568437E29814F91"
+# https://superuser.com/a/769488
 key_id = "4568437E29814F91"
 
 [profile.dev]
