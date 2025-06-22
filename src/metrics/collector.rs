@@ -412,6 +412,7 @@ impl Metric for SystemdUnitStateCollector {
 }
 
 #[derive(Debug, Default)]
+#[allow(clippy::type_complexity)]
 pub struct NodeInfoCollector {
     metric: std::sync::Mutex<Option<Info<Vec<(&'static str, String)>>>>,
     uname: Mutex<Option<NodeInfo>>,
