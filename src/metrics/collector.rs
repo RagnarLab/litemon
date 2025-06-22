@@ -443,7 +443,8 @@ impl Metric for NodeInfoCollector {
 
     fn register(&self, registry: &mut prometheus_client::registry::Registry) {
         registry.register(
-            "litemon_node_info",
+            // The `_info` is automatically appended.
+            "litemon_node",
             "System information about the node",
             self.metric
                 .lock()
