@@ -12,8 +12,7 @@ use smol::lock::RwLock;
 
 use crate::config::UserConfig;
 use crate::metrics::collector::{
-    CpuStatsCollector, FilesystemStatsCollector, MemoryStatsCollector, NetworkStatsCollector,
-    SystemdUnitStateCollector,
+    CpuStatsCollector, FilesystemStatsCollector, MemoryStatsCollector, NetworkStatsCollector, NodeInfoCollector, SystemdUnitStateCollector
 };
 use crate::metrics::Metric;
 
@@ -50,6 +49,12 @@ impl Collector {
         let mut inner = self.inner.write().await;
 
         let metrics = &config.metrics;
+        {
+            let collector = Box::new(NodeInfoCollector::default());
+            collector.init(Default::default()).await?;
+            inner.metrics.push(collector);
+        }
+
         if metrics.cpu_seconds.enabled || metrics.loadavg.enabled {
             // TODO: Fix disabling of CPU seconds.
             let collector = Box::new(CpuStatsCollector::default());

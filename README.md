@@ -145,6 +145,7 @@ prometheus.scrape "litemon_exporter" {
 
 |          Metric Name          | Metric Type |          Description          |        Cardinality        |
 | ----------------------------- | ----------- | ----------------------------- | ------------------------- |
+| litemon_node_info             | Info        | System information            | 1 per host |
 | litemon_load_avg_1m           | Gauge       | Load average over 1 minute.   | 1 per host |
 | litemon_load_avg_5m           | Gauge       | Load average over 5 minutes.  | 1 per host |
 | litemon_load_avg_15m          | Gauge       | Load average over 15 minutes. | 1 per host |

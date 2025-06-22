@@ -7,10 +7,12 @@ use prometheus_client::encoding::EncodeLabelSet;
 use prometheus_client::metrics::counter::Counter;
 use prometheus_client::metrics::family::Family;
 use prometheus_client::metrics::gauge::Gauge;
+use prometheus_client::metrics::info::Info;
 use smol::lock::Mutex;
 
 use super::cpu::{CpuUsage, LoadAverages};
 use super::fs::FilesystemUsage;
+use super::info::NodeInfo;
 use super::memory::MemoryStats;
 use super::net::NetworkStats;
 use super::systemd_unit_state::{ActiveState, SystemdUnitState};
@@ -406,5 +408,51 @@ impl Metric for SystemdUnitStateCollector {
 
             Ok(())
         })
+    }
+}
+
+#[derive(Debug, Default)]
+pub struct NodeInfoCollector {
+    metric: std::sync::Mutex<Option<Info<Vec<(&'static str, String)>>>>,
+    uname: Mutex<Option<NodeInfo>>,
+}
+
+impl Metric for NodeInfoCollector {
+    fn init(&self, _options: hashbrown::HashMap<String, String>) -> DynFuture<'_, Result<()>> {
+        Box::pin(async move {
+            let info = NodeInfo::new()?;
+
+            {
+                let mut lock = self.metric.lock().expect("not poisoned");
+                *lock = Some(Info::new(vec![
+                    ("hostname", info.hostname.clone()),
+                    ("arch", info.arch.clone()),
+                    ("uptime", format!("{}", info.uptime.as_secs())),
+                ]))
+            }
+
+            {
+                let mut lock = self.uname.lock().await;
+                *lock = Some(info);
+            }
+
+            Ok(())
+        })
+    }
+
+    fn register(&self, registry: &mut prometheus_client::registry::Registry) {
+        registry.register(
+            "litemon_node_info",
+            "System information about the node",
+            self.metric
+                .lock()
+                .expect("not poisoned")
+                .take()
+                .expect("must be initialized"),
+        )
+    }
+
+    fn collect(&self) -> DynFuture<'_, Result<()>> {
+        Box::pin(async move { Ok::<(), _>(()) })
     }
 }

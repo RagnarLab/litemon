@@ -6,6 +6,7 @@ use hashbrown::HashMap;
 pub mod collector;
 pub mod cpu;
 pub mod fs;
+pub mod info;
 pub mod memory;
 pub mod net;
 pub mod systemd_unit_state;
