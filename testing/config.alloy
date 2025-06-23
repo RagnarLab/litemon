@@ -1,0 +1,43 @@
+logging {
+    level = "debug"
+}
+
+livedebugging {
+    enabled = true
+}
+
+prometheus.remote_write "EXAMPLE" {
+  endpoint {
+    url = "http://localhost:9090/api/v1/write"
+  }
+}
+
+// https://grafana.com/docs/alloy/latest/reference/components/discovery/discovery.relabel/
+discovery.relabel "integrations_litemon_exporter" {
+  targets = [
+    // Optionally, update to your listen address and port.
+    {"__address__" = "localhost:9774"},
+  ]
+
+  rule {
+    target_label = "instance"
+    replacement  = constants.hostname
+  }
+
+  rule {
+    target_label = "job"
+    replacement  = "integrations/litemon"
+  }
+}
+
+// https://grafana.com/docs/alloy/latest/reference/components/prometheus/prometheus.scrape/
+prometheus.scrape "litemon_exporter" {
+  job_name        = "integrations/litemon"
+  targets         = discovery.relabel.integrations_litemon_exporter.output
+  scheme          = "http"
+  scrape_interval = "10s"
+  metrics_path    = "/metrics"
+
+  // Update endpoint to your prometheus ingest.
+  forward_to = [prometheus.remote_write.EXAMPLE.receiver]
+}
