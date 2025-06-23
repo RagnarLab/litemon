@@ -7,7 +7,6 @@ use prometheus_client::encoding::EncodeLabelSet;
 use prometheus_client::metrics::counter::Counter;
 use prometheus_client::metrics::family::Family;
 use prometheus_client::metrics::gauge::Gauge;
-use prometheus_client::metrics::info::Info;
 use smol::lock::Mutex;
 
 use super::cpu::{CpuUsage, LoadAverages};
@@ -414,8 +413,18 @@ impl Metric for SystemdUnitStateCollector {
 #[derive(Debug, Default)]
 #[allow(clippy::type_complexity)]
 pub struct NodeInfoCollector {
-    metric: std::sync::Mutex<Option<Info<Vec<(&'static str, String)>>>>,
+    metric: Family<NodeInfoLabels, Gauge>,
     uname: Mutex<Option<NodeInfo>>,
+}
+
+#[derive(Clone, Debug, Hash, PartialEq, Eq, EncodeLabelSet)]
+struct NodeInfoLabels {
+    /// Hostname
+    hostname: String,
+    /// CPU architecture
+    arch: String,
+    /// Uptime as seconds
+    uptime: String,
 }
 
 impl Metric for NodeInfoCollector {
@@ -424,12 +433,13 @@ impl Metric for NodeInfoCollector {
             let info = NodeInfo::new()?;
 
             {
-                let mut lock = self.metric.lock().expect("not poisoned");
-                *lock = Some(Info::new(vec![
-                    ("hostname", info.hostname.clone()),
-                    ("arch", info.arch.clone()),
-                    ("uptime", format!("{}", info.uptime.as_secs())),
-                ]))
+                let labels = NodeInfoLabels {
+                    hostname: info.hostname.clone(),
+                    arch: info.arch.clone(),
+                    uptime: format!("{}", info.uptime.as_secs()),
+                };
+                let metric = self.metric.get_or_create(&labels);
+                metric.set(1);
             }
 
             {
@@ -443,14 +453,9 @@ impl Metric for NodeInfoCollector {
 
     fn register(&self, registry: &mut prometheus_client::registry::Registry) {
         registry.register(
-            // The `_info` is automatically appended.
-            "litemon_node",
+            "litemon_node_info",
             "System information about the node",
-            self.metric
-                .lock()
-                .expect("not poisoned")
-                .take()
-                .expect("must be initialized"),
+            self.metric.clone(),
         )
     }
 
