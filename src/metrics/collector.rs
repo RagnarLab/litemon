@@ -11,6 +11,7 @@ use prometheus_client::metrics::gauge::Gauge;
 use smol::lock::Mutex;
 
 use super::cpu::{CpuUsage, LoadAverages};
+use super::disk::IOMetrics;
 use super::fs::FilesystemUsage;
 use super::info::NodeInfo;
 use super::memory::MemoryStats;
@@ -488,6 +489,83 @@ impl Metric for PressureCollector {
             self.io_total.set(io.total);
             self.cpu_total.set(cpu.total);
             self.mem_total.set(mem.total);
+
+            Ok(())
+        })
+    }
+}
+
+#[derive(Debug)]
+pub struct DiskStatsCollector {
+    bytes_written: Family<DiskStatsLabels, Gauge<u64, AtomicU64>>,
+    bytes_read: Family<DiskStatsLabels, Gauge<u64, AtomicU64>>,
+    mountpoints: Vec<String>,
+}
+
+#[derive(Clone, Debug, Hash, PartialEq, Eq, EncodeLabelSet)]
+struct DiskStatsLabels {
+    /// Device name
+    device: String,
+    /// Mountpoint
+    mountpoint: String,
+}
+
+impl DiskStatsCollector {
+    pub fn new(options: hashbrown::HashMap<String, String>) -> Result<Self> {
+        let mountpoints = if let Some(mountpoints_str) = options.get("mountpoints") {
+            mountpoints_str
+                .split(',')
+                .map(|s| s.trim().to_string())
+                .collect()
+        } else {
+            vec!["/".to_string()] // Default to root filesystem
+        };
+
+        Ok(Self {
+            bytes_written: Default::default(),
+            bytes_read: Default::default(),
+            mountpoints,
+        })
+    }
+}
+
+impl Metric for DiskStatsCollector {
+    fn register(&self, registry: &mut prometheus_client::registry::Registry) {
+        registry.register(
+            "litemon_disk_bytes_written_total",
+            "Number of bytes written to disk since boot",
+            self.bytes_written.clone(),
+        );
+        registry.register(
+            "litemon_disk_bytes_read_total",
+            "Number of bytes read from disk since boot",
+            self.bytes_read.clone(),
+        );
+    }
+
+    fn collect(&self) -> DynFuture<'_, Result<()>> {
+        Box::pin(async move {
+            let stats = IOMetrics::all().await?;
+            for (device, stats) in &stats.disks {
+                if !self.mountpoints.iter().any(|el| el == &stats.mountpoint) {
+                    continue;
+                }
+
+                let labels = DiskStatsLabels {
+                    device: device.clone(),
+                    mountpoint: stats.mountpoint.clone(),
+                };
+
+                let bytes_read_prev = self.bytes_read.get_or_create(&labels).get();
+                self.bytes_read
+                    .get_or_create(&labels)
+                    .inc_by(stats.bytes_read_total - bytes_read_prev);
+
+                let bytes_written_prev = self.bytes_written.get_or_create(&labels).get();
+                self.bytes_written
+                    .get_or_create(&labels)
+                    .inc_by(stats.bytes_written_total - bytes_written_prev);
+            }
 
             Ok(())
         })

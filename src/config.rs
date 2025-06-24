@@ -26,6 +26,7 @@ pub struct MetricsConfig {
     pub network_throughput: NetworkThroughputConfig,
     pub disk_usage: DiskUsageConfig,
     pub pressure: PressureConfig,
+    pub disk_stats: DiskStatConfig,
 }
 
 #[derive(Debug)]
@@ -67,6 +68,12 @@ pub struct PressureConfig {
     pub enabled: bool,
 }
 
+#[derive(Debug)]
+pub struct DiskStatConfig {
+    pub enabled: bool,
+    pub mountpoints: Vec<String>,
+}
+
 impl Default for MetricsConfig {
     fn default() -> Self {
         Self {
@@ -89,6 +96,10 @@ impl Default for MetricsConfig {
                 mountpoints: vec![],
             },
             pressure: PressureConfig { enabled: true },
+            disk_stats: DiskStatConfig {
+                enabled: false,
+                mountpoints: vec![],
+            },
         }
     }
 }
@@ -204,6 +215,28 @@ impl UserConfig {
                         .and_then(|el| el.as_bool())
                         .unwrap_or_default();
                     ret.pressure = PressureConfig { enabled };
+                }
+
+                if let Some(node) = children.get("disk_stats") {
+                    let enabled = node
+                        .get("enabled")
+                        .and_then(|el| el.as_bool())
+                        .unwrap_or_default();
+                    let mountpoints = node
+                        .children()
+                        .and_then(|el| el.get("mountpoints"))
+                        .map(|el| el.entries())
+                        .map(|it| {
+                            it.iter()
+                                .filter_map(|el| el.value().as_string())
+                                .map(ToOwned::to_owned)
+                                .collect::<Vec<_>>()
+                        })
+                        .unwrap_or_default();
+                    ret.disk_stats = DiskStatConfig {
+                        enabled,
+                        mountpoints,
+                    };
                 }
             }
 

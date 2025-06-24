@@ -12,8 +12,7 @@ use smol::lock::RwLock;
 
 use crate::config::UserConfig;
 use crate::metrics::collector::{
-    CpuStatsCollector, FilesystemStatsCollector, MemoryStatsCollector, NetworkStatsCollector,
-    NodeInfoCollector, PressureCollector, SystemdUnitStateCollector,
+    CpuStatsCollector, DiskStatsCollector, FilesystemStatsCollector, MemoryStatsCollector, NetworkStatsCollector, NodeInfoCollector, PressureCollector, SystemdUnitStateCollector
 };
 use crate::metrics::Metric;
 
@@ -96,6 +95,13 @@ impl Collector {
 
         if metrics.pressure.enabled {
             let collector = Box::new(PressureCollector::default());
+            inner.metrics.push(collector);
+        }
+
+        if metrics.disk_stats.enabled {
+            let mountpoints = metrics.disk_stats.mountpoints.join(",");
+            let options = HashMap::from([("mountpoints".to_owned(), mountpoints)]);
+            let collector = Box::new(DiskStatsCollector::new(options)?);
             inner.metrics.push(collector);
         }
 

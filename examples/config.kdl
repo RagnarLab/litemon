@@ -12,4 +12,7 @@ metrics {
     mountpoints "/"
   }
   pressure enabled=#true
+  disk_stats enabled=#true {
+      mountpoints "/"
+  }
 }

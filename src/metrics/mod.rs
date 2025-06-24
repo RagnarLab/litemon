@@ -4,6 +4,7 @@ use anyhow::Result;
 
 pub mod collector;
 pub mod cpu;
+pub mod disk;
 pub mod fs;
 pub mod info;
 pub mod memory;
