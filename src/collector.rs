@@ -4,7 +4,7 @@
 use std::sync::Arc;
 
 use anyhow::{Context, Result};
-use futures::future::join_all;
+use futures_concurrency::future::Join;
 use hashbrown::HashMap;
 use prometheus_client::encoding::text::encode;
 use prometheus_client::registry::Registry;
@@ -12,7 +12,8 @@ use smol::lock::RwLock;
 
 use crate::config::UserConfig;
 use crate::metrics::collector::{
-    CpuStatsCollector, FilesystemStatsCollector, MemoryStatsCollector, NetworkStatsCollector, NodeInfoCollector, SystemdUnitStateCollector
+    CpuStatsCollector, FilesystemStatsCollector, MemoryStatsCollector, NetworkStatsCollector,
+    NodeInfoCollector, PressureCollector, SystemdUnitStateCollector,
 };
 use crate::metrics::Metric;
 
@@ -101,6 +102,12 @@ impl Collector {
             inner.metrics.push(collector);
         }
 
+        if metrics.pressure.enabled {
+            let collector = Box::new(PressureCollector::default());
+            collector.init(Default::default()).await?;
+            inner.metrics.push(collector);
+        }
+
         Ok(())
     }
 
@@ -123,7 +130,7 @@ impl Collector {
             .iter()
             .map(|metric| metric.collect())
             .collect();
-        let results = join_all(futs).await;
+        let results = futs.join().await;
         for res in results {
             res.inspect_err(|err| eprintln!("{err:?}"))
                 .context("collecting metrics")?;

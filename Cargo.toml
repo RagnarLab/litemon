@@ -59,7 +59,7 @@ lexopt = "0.3"
 # Async runtimes & utilities
 smol = "2"
 smol-hyper = "0.1"
-futures = "0.3"
+futures-concurrency = "7"
 
 # Tracing
 tracing = { version = "0.1", default-features = false, features = [] }

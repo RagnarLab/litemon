@@ -11,4 +11,5 @@ metrics {
   disk_usage enabled=#true {
     mountpoints "/"
   }
+  pressure enabled=#true
 }

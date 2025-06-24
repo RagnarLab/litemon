@@ -9,6 +9,7 @@ pub mod fs;
 pub mod info;
 pub mod memory;
 pub mod net;
+pub mod pressure;
 pub mod systemd_unit_state;
 
 /// A boxed future. Construct with `Box::pin(async move { ... })`.

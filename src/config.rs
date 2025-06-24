@@ -25,6 +25,7 @@ pub struct MetricsConfig {
     pub systemd_unit_state: SystemdUnitStateConfig,
     pub network_throughput: NetworkThroughputConfig,
     pub disk_usage: DiskUsageConfig,
+    pub pressure: PressureConfig,
 }
 
 #[derive(Debug)]
@@ -61,6 +62,11 @@ pub struct DiskUsageConfig {
     pub mountpoints: Vec<String>,
 }
 
+#[derive(Debug)]
+pub struct PressureConfig {
+    pub enabled: bool,
+}
+
 impl Default for MetricsConfig {
     fn default() -> Self {
         Self {
@@ -82,6 +88,7 @@ impl Default for MetricsConfig {
                 enabled: false,
                 mountpoints: vec![],
             },
+            pressure: PressureConfig { enabled: true },
         }
     }
 }
@@ -189,6 +196,14 @@ impl UserConfig {
                         enabled,
                         mountpoints,
                     };
+                }
+
+                if let Some(node) = children.get("pressure") {
+                    let enabled = node
+                        .get("enabled")
+                        .and_then(|el| el.as_bool())
+                        .unwrap_or_default();
+                    ret.pressure = PressureConfig { enabled };
                 }
             }
 

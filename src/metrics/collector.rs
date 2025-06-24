@@ -3,6 +3,7 @@
 use std::sync::atomic::{AtomicBool, AtomicU32, AtomicU64};
 
 use anyhow::Result;
+use futures_concurrency::future::Join;
 use prometheus_client::encoding::EncodeLabelSet;
 use prometheus_client::metrics::counter::Counter;
 use prometheus_client::metrics::family::Family;
@@ -14,6 +15,7 @@ use super::fs::FilesystemUsage;
 use super::info::NodeInfo;
 use super::memory::MemoryStats;
 use super::net::NetworkStats;
+use super::pressure::SystemPressure;
 use super::systemd_unit_state::{ActiveState, SystemdUnitState};
 use super::{DynFuture, Metric};
 
@@ -411,7 +413,6 @@ impl Metric for SystemdUnitStateCollector {
 }
 
 #[derive(Debug, Default)]
-#[allow(clippy::type_complexity)]
 pub struct NodeInfoCollector {
     metric: Family<NodeInfoLabels, Gauge>,
     uname: Mutex<Option<NodeInfo>>,
@@ -461,5 +462,61 @@ impl Metric for NodeInfoCollector {
 
     fn collect(&self) -> DynFuture<'_, Result<()>> {
         Box::pin(async move { Ok::<(), _>(()) })
+    }
+}
+
+#[derive(Debug, Default)]
+pub struct PressureCollector {
+    io_total: Gauge<u64, AtomicU64>,
+    cpu_total: Gauge<u64, AtomicU64>,
+    mem_total: Gauge<u64, AtomicU64>,
+}
+
+impl Metric for PressureCollector {
+    fn init(&self, _options: hashbrown::HashMap<String, String>) -> DynFuture<'_, Result<()>> {
+        Box::pin(async move {
+            Ok(())
+        })
+    }
+
+    fn register(&self, registry: &mut prometheus_client::registry::Registry) {
+        let io_total = &self.io_total;
+        registry.register(
+            "litemon_io_pressure_total",
+            "I/O pressure stall information (PSI) in microseconds",
+            io_total.clone(),
+        );
+
+        let cpu_total = &self.cpu_total;
+        registry.register(
+            "litemon_cpu_pressure_total",
+            "CPU pressure stall information (PSI) in microseconds",
+            cpu_total.clone(),
+        );
+
+        let mem_total = &self.mem_total;
+        registry.register(
+            "litemon_memory_pressure_total",
+            "Memory pressure stall information (PSI) in microseconds",
+            mem_total.clone(),
+        );
+    }
+
+    fn collect(&self) -> DynFuture<'_, Result<()>> {
+        Box::pin(async move {
+            let io = SystemPressure::io();
+            let cpu = SystemPressure::cpu();
+            let mem = SystemPressure::mem();
+            let (io, cpu, mem) = (io, cpu, mem).join().await;
+            let io = io?;
+            let cpu = cpu?;
+            let mem = mem?;
+
+            self.io_total.set(io.total);
+            self.cpu_total.set(cpu.total);
+            self.mem_total.set(mem.total);
+
+            Ok(())
+        })
     }
 }
