@@ -26,10 +26,6 @@ pub struct MemoryStatsCollector {
 }
 
 impl Metric for MemoryStatsCollector {
-    fn init(&self, _options: hashbrown::HashMap<String, String>) -> DynFuture<'_, Result<()>> {
-        Box::pin(async move { Ok(()) })
-    }
-
     fn register(&self, registry: &mut prometheus_client::registry::Registry) {
         let gauge_ref = &self.gauge;
         registry.register(
@@ -56,7 +52,7 @@ pub struct CpuStatsCollector {
     load_avg_15m: Gauge<f64, AtomicU64>,
     cpu_usage_overall: Gauge<f64, AtomicU64>,
     cpu_usage_per_core: Family<CpuCoreLabels, Gauge<f64, AtomicU64>>,
-    last_cpu_snapshot: Mutex<Option<CpuUsage>>,
+    last_cpu_snapshot: Mutex<CpuUsage>,
     load_avg_enabled: AtomicBool,
 }
 
@@ -65,34 +61,29 @@ struct CpuCoreLabels {
     core: String,
 }
 
-impl Default for CpuStatsCollector {
-    fn default() -> Self {
-        Self {
+impl CpuStatsCollector {
+    pub async fn new(options: hashbrown::HashMap<String, String>) -> Result<Self> {
+        let initial_snapshot = CpuUsage::now().await?;
+
+        let ret = Self {
             load_avg_1m: Gauge::default(),
             load_avg_5m: Gauge::default(),
             load_avg_15m: Gauge::default(),
             cpu_usage_overall: Gauge::default(),
             cpu_usage_per_core: Family::default(),
-            last_cpu_snapshot: Mutex::new(None),
+            last_cpu_snapshot: Mutex::new(initial_snapshot),
             load_avg_enabled: AtomicBool::new(false),
-        }
+        };
+        ret.load_avg_enabled.store(
+            options.get("load_avg_enabled").is_some_and(|b| b == "true"),
+            std::sync::atomic::Ordering::SeqCst,
+        );
+
+        Ok(ret)
     }
 }
 
 impl Metric for CpuStatsCollector {
-    fn init(&self, options: hashbrown::HashMap<String, String>) -> DynFuture<'_, Result<()>> {
-        Box::pin(async move {
-            let initial_snapshot = CpuUsage::now().await?;
-            *self.last_cpu_snapshot.lock().await = Some(initial_snapshot);
-            self.load_avg_enabled.store(
-                options.get("load_avg_enabled").is_some_and(|b| b == "true"),
-                std::sync::atomic::Ordering::SeqCst,
-            );
-
-            Ok(())
-        })
-    }
-
     fn register(&self, registry: &mut prometheus_client::registry::Registry) {
         if self
             .load_avg_enabled
@@ -139,20 +130,19 @@ impl Metric for CpuStatsCollector {
             }
 
             let current_snapshot = CpuUsage::now().await?;
-            if let Some(prev_snapshot) = self.last_cpu_snapshot.lock().await.as_ref() {
-                let overall_usage = current_snapshot.percentage_all_cores(prev_snapshot);
-                self.cpu_usage_overall.set(overall_usage);
+            let mut prev_snapshot = self.last_cpu_snapshot.lock().await;
+            let overall_usage = current_snapshot.percentage_all_cores(&prev_snapshot);
+            self.cpu_usage_overall.set(overall_usage);
 
-                let per_core_usage = current_snapshot.percentage_per_core(prev_snapshot);
-                for (core_idx, usage) in per_core_usage.iter().enumerate() {
-                    let labels = CpuCoreLabels {
-                        core: core_idx.to_string(),
-                    };
-                    self.cpu_usage_per_core.get_or_create(&labels).set(*usage);
-                }
+            let per_core_usage = current_snapshot.percentage_per_core(&prev_snapshot);
+            for (core_idx, usage) in per_core_usage.iter().enumerate() {
+                let labels = CpuCoreLabels {
+                    core: core_idx.to_string(),
+                };
+                self.cpu_usage_per_core.get_or_create(&labels).set(*usage);
             }
 
-            *self.last_cpu_snapshot.lock().await = Some(current_snapshot);
+            *prev_snapshot = current_snapshot;
 
             Ok(())
         })
@@ -163,7 +153,7 @@ impl Metric for CpuStatsCollector {
 #[derive(Debug, Default)]
 pub struct FilesystemStatsCollector {
     fs_usage_ratio: Family<FilesystemLabels, Gauge<f64, AtomicU64>>,
-    mountpoints: Mutex<Vec<String>>,
+    mountpoints: Vec<String>,
 }
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, EncodeLabelSet)]
@@ -173,23 +163,25 @@ struct FilesystemLabels {
     fstype: String,
 }
 
-impl Metric for FilesystemStatsCollector {
-    fn init(&self, options: hashbrown::HashMap<String, String>) -> DynFuture<'_, Result<()>> {
-        Box::pin(async move {
-            let mountpoints = if let Some(mountpoints_str) = options.get("mountpoints") {
-                mountpoints_str
-                    .split(',')
-                    .map(|s| s.trim().to_string())
-                    .collect()
-            } else {
-                vec!["/".to_string()] // Default to root filesystem
-            };
+impl FilesystemStatsCollector {
+    pub async fn new(options: hashbrown::HashMap<String, String>) -> Result<Self> {
+        let mountpoints = if let Some(mountpoints_str) = options.get("mountpoints") {
+            mountpoints_str
+                .split(',')
+                .map(|s| s.trim().to_string())
+                .collect()
+        } else {
+            vec!["/".to_string()] // Default to root filesystem
+        };
 
-            *self.mountpoints.lock().await = mountpoints;
-            Ok(())
+        Ok(Self {
+            fs_usage_ratio: Default::default(),
+            mountpoints,
         })
     }
+}
 
+impl Metric for FilesystemStatsCollector {
     fn register(&self, registry: &mut prometheus_client::registry::Registry) {
         registry.register(
             "litemon_fs_usage_ratio",
@@ -200,9 +192,9 @@ impl Metric for FilesystemStatsCollector {
 
     fn collect(&self) -> DynFuture<'_, Result<()>> {
         Box::pin(async move {
-            let mountpoints = self.mountpoints.lock().await;
+            let mountpoints = &self.mountpoints;
 
-            for mountpoint in &*mountpoints {
+            for mountpoint in mountpoints {
                 match FilesystemUsage::new(&mountpoint).await {
                     Ok(usage) => {
                         let labels = FilesystemLabels {
@@ -236,7 +228,7 @@ pub struct NetworkStatsCollector {
     errors_received: Family<NetworkLabels, Counter<f64, AtomicU64>>,
     bytes_sent: Family<NetworkLabels, Counter<f64, AtomicU64>>,
     errors_sent: Family<NetworkLabels, Counter<f64, AtomicU64>>,
-    interfaces: Mutex<Vec<String>>,
+    interfaces: Vec<String>,
 }
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, EncodeLabelSet)]
@@ -244,24 +236,29 @@ struct NetworkLabels {
     interface: String,
 }
 
-impl Metric for NetworkStatsCollector {
-    fn init(&self, options: hashbrown::HashMap<String, String>) -> DynFuture<'_, Result<()>> {
-        Box::pin(async move {
-            let interfaces = if let Some(interfaces_str) = options.get("interfaces") {
-                interfaces_str
-                    .split(',')
-                    .map(|s| s.trim().to_string())
-                    .collect()
-            } else {
-                // Default to common interfaces if none specified
-                vec!["eth0".to_string()]
-            };
+impl NetworkStatsCollector {
+    pub async fn new(options: hashbrown::HashMap<String, String>) -> Result<Self> {
+        let interfaces = if let Some(interfaces_str) = options.get("interfaces") {
+            interfaces_str
+                .split(',')
+                .map(|s| s.trim().to_string())
+                .collect()
+        } else {
+            // Default to common interfaces if none specified
+            vec!["eth0".to_string()]
+        };
 
-            *self.interfaces.lock().await = interfaces;
-            Ok(())
+        Ok(Self {
+            bytes_received: Default::default(),
+            errors_received: Default::default(),
+            bytes_sent: Default::default(),
+            errors_sent: Default::default(),
+            interfaces,
         })
     }
+}
 
+impl Metric for NetworkStatsCollector {
     fn register(&self, registry: &mut prometheus_client::registry::Registry) {
         registry.register(
             "litemon_net_bytes_received",
@@ -287,10 +284,10 @@ impl Metric for NetworkStatsCollector {
 
     fn collect(&self) -> DynFuture<'_, Result<()>> {
         Box::pin(async move {
-            let interfaces = self.interfaces.lock().await;
+            let interfaces = &self.interfaces;
             let network_stats = NetworkStats::all().await?;
 
-            for interface_name in &*interfaces {
+            for interface_name in interfaces {
                 if let Some(interface_stats) = network_stats.interfaces.get(interface_name) {
                     let labels = NetworkLabels {
                         interface: interface_name.clone(),
@@ -327,8 +324,8 @@ impl Metric for NetworkStatsCollector {
 #[derive(Debug)]
 pub struct SystemdUnitStateCollector {
     unit_state: Family<SystemdUnitLabels, Gauge<u32, AtomicU32>>,
-    units: Mutex<Vec<String>>,
-    systemd_client: Mutex<Option<SystemdUnitState<'static>>>,
+    units: Vec<String>,
+    systemd_client: SystemdUnitState<'static>,
 }
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, EncodeLabelSet)]
@@ -337,35 +334,26 @@ struct SystemdUnitLabels {
     state: String,
 }
 
-impl Default for SystemdUnitStateCollector {
-    fn default() -> Self {
-        Self {
-            unit_state: Family::default(),
-            units: Mutex::new(Vec::new()),
-            systemd_client: Mutex::new(None),
-        }
+impl SystemdUnitStateCollector {
+    pub async fn new(options: hashbrown::HashMap<String, String>) -> Result<Self> {
+        // Parse units from options
+        let units = if let Some(units_str) = options.get("units") {
+            units_str.split(',').map(|s| s.trim().to_string()).collect()
+        } else {
+            Vec::new()
+        };
+
+        let client = SystemdUnitState::new().await?;
+
+        Ok(Self {
+            unit_state: Default::default(),
+            units,
+            systemd_client: client,
+        })
     }
 }
 
 impl Metric for SystemdUnitStateCollector {
-    fn init(&self, options: hashbrown::HashMap<String, String>) -> DynFuture<'_, Result<()>> {
-        Box::pin(async move {
-            // Parse units from options
-            let units = if let Some(units_str) = options.get("units") {
-                units_str.split(',').map(|s| s.trim().to_string()).collect()
-            } else {
-                Vec::new()
-            };
-
-            *self.units.lock().await = units;
-
-            let client = SystemdUnitState::new().await?;
-            *self.systemd_client.lock().await = Some(client);
-
-            Ok(())
-        })
-    }
-
     fn register(&self, registry: &mut prometheus_client::registry::Registry) {
         registry.register(
             "litemon_systemd_unit_state",
@@ -376,33 +364,32 @@ impl Metric for SystemdUnitStateCollector {
 
     fn collect(&self) -> DynFuture<'_, Result<()>> {
         Box::pin(async move {
-            let units = self.units.lock().await;
+            let units = &self.units;
+            let client = &self.systemd_client;
 
-            if let Some(client) = self.systemd_client.lock().await.as_ref() {
-                for unit_name in &*units {
-                    match client.active_state(unit_name).await {
-                        Ok(state) => {
-                            for state_name in ActiveState::all_states() {
-                                let labels = SystemdUnitLabels {
-                                    unit: unit_name.clone(),
-                                    state: state_name.to_string(),
-                                };
-                                self.unit_state.get_or_create(&labels).set(0);
-                            }
-
-                            let current_labels = SystemdUnitLabels {
+            for unit_name in units {
+                match client.active_state(unit_name).await {
+                    Ok(state) => {
+                        for state_name in ActiveState::all_states() {
+                            let labels = SystemdUnitLabels {
                                 unit: unit_name.clone(),
-                                state: state.to_string(),
+                                state: state_name.to_string(),
                             };
-                            self.unit_state.get_or_create(&current_labels).set(1);
+                            self.unit_state.get_or_create(&labels).set(0);
                         }
-                        Err(e) => {
-                            return Err(anyhow::anyhow!(
-                                "Failed to get state for unit {}: {}",
-                                unit_name,
-                                e
-                            ));
-                        }
+
+                        let current_labels = SystemdUnitLabels {
+                            unit: unit_name.clone(),
+                            state: state.to_string(),
+                        };
+                        self.unit_state.get_or_create(&current_labels).set(1);
+                    }
+                    Err(e) => {
+                        return Err(anyhow::anyhow!(
+                            "Failed to get state for unit {}: {}",
+                            unit_name,
+                            e
+                        ));
                     }
                 }
             }
@@ -412,10 +399,9 @@ impl Metric for SystemdUnitStateCollector {
     }
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug)]
 pub struct NodeInfoCollector {
     metric: Family<NodeInfoLabels, Gauge>,
-    uname: Mutex<Option<NodeInfo>>,
 }
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, EncodeLabelSet)]
@@ -428,30 +414,23 @@ struct NodeInfoLabels {
     uptime: String,
 }
 
-impl Metric for NodeInfoCollector {
-    fn init(&self, _options: hashbrown::HashMap<String, String>) -> DynFuture<'_, Result<()>> {
-        Box::pin(async move {
-            let info = NodeInfo::new()?;
+impl NodeInfoCollector {
+    pub async fn new() -> Result<Self> {
+        let info = NodeInfo::new()?;
 
-            {
-                let labels = NodeInfoLabels {
-                    hostname: info.hostname.clone(),
-                    arch: info.arch.clone(),
-                    uptime: format!("{}", info.uptime.as_secs()),
-                };
-                let metric = self.metric.get_or_create(&labels);
-                metric.set(1);
-            }
+        let labels = NodeInfoLabels {
+            hostname: info.hostname.clone(),
+            arch: info.arch.clone(),
+            uptime: format!("{}", info.uptime.as_secs()),
+        };
+        let metric = Family::<NodeInfoLabels, Gauge>::default();
+        metric.get_or_create(&labels).set(1);
 
-            {
-                let mut lock = self.uname.lock().await;
-                *lock = Some(info);
-            }
-
-            Ok(())
-        })
+        Ok(Self { metric })
     }
+}
 
+impl Metric for NodeInfoCollector {
     fn register(&self, registry: &mut prometheus_client::registry::Registry) {
         registry.register(
             "litemon_node_info",
@@ -473,12 +452,6 @@ pub struct PressureCollector {
 }
 
 impl Metric for PressureCollector {
-    fn init(&self, _options: hashbrown::HashMap<String, String>) -> DynFuture<'_, Result<()>> {
-        Box::pin(async move {
-            Ok(())
-        })
-    }
-
     fn register(&self, registry: &mut prometheus_client::registry::Registry) {
         let io_total = &self.io_total;
         registry.register(

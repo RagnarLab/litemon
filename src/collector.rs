@@ -51,60 +51,51 @@ impl Collector {
 
         let metrics = &config.metrics;
         {
-            let collector = Box::new(NodeInfoCollector::default());
-            collector.init(Default::default()).await?;
+            let collector = Box::new(NodeInfoCollector::new().await?);
             inner.metrics.push(collector);
         }
 
         if metrics.cpu_seconds.enabled || metrics.loadavg.enabled {
             // TODO: Fix disabling of CPU seconds.
-            let collector = Box::new(CpuStatsCollector::default());
-            collector
-                .init(if metrics.loadavg.enabled {
+            let collector = Box::new(
+                CpuStatsCollector::new(if metrics.loadavg.enabled {
                     HashMap::from([("load_avg_enabled".to_owned(), "true".to_owned())])
                 } else {
                     Default::default()
                 })
-                .await?;
+                .await?,
+            );
             inner.metrics.push(collector);
         }
 
         if metrics.memory_used.enabled {
             let collector = Box::new(MemoryStatsCollector::default());
-            collector.init(Default::default()).await?;
             inner.metrics.push(collector);
         }
 
         if metrics.systemd_unit_state.enabled {
-            let collector = Box::new(SystemdUnitStateCollector::default());
             let units = metrics.systemd_unit_state.units.join(",");
-            collector
-                .init(HashMap::from([("units".to_owned(), units)]))
-                .await?;
+            let options = HashMap::from([("units".to_owned(), units)]);
+            let collector = Box::new(SystemdUnitStateCollector::new(options).await?);
             inner.metrics.push(collector);
         }
 
         if metrics.network_throughput.enabled {
-            let collector = Box::new(NetworkStatsCollector::default());
             let interfaces = metrics.network_throughput.interfaces.join(",");
-            collector
-                .init(HashMap::from([("interfaces".to_owned(), interfaces)]))
-                .await?;
+            let options = HashMap::from([("interfaces".to_owned(), interfaces)]);
+            let collector = Box::new(NetworkStatsCollector::new(options).await?);
             inner.metrics.push(collector);
         }
 
         if metrics.disk_usage.enabled {
-            let collector = Box::new(FilesystemStatsCollector::default());
             let mountpoints = metrics.disk_usage.mountpoints.join(",");
-            collector
-                .init(HashMap::from([("mountpoints".to_owned(), mountpoints)]))
-                .await?;
+            let options = HashMap::from([("mountpoints".to_owned(), mountpoints)]);
+            let collector = Box::new(FilesystemStatsCollector::new(options).await?);
             inner.metrics.push(collector);
         }
 
         if metrics.pressure.enabled {
             let collector = Box::new(PressureCollector::default());
-            collector.init(Default::default()).await?;
             inner.metrics.push(collector);
         }
 

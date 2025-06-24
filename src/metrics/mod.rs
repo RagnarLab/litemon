@@ -1,7 +1,6 @@
 //! All supported metrics.
 
 use anyhow::Result;
-use hashbrown::HashMap;
 
 pub mod collector;
 pub mod cpu;
@@ -17,9 +16,6 @@ pub type DynFuture<'a, T> = std::pin::Pin<Box<dyn Future<Output = T> + Send + 'a
 
 /// Trait that's to be implemented by any supported metric.
 pub trait Metric: Send + Sync + std::fmt::Debug {
-    fn init(&self, options: HashMap<String, String>) -> DynFuture<'_, Result<()>>;
-
     fn register(&self, registry: &mut prometheus_client::registry::Registry);
-
     fn collect(&self) -> DynFuture<'_, Result<()>>;
 }
