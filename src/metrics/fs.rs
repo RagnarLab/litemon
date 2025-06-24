@@ -2,7 +2,6 @@
 
 use anyhow::{Context, Result};
 use nix::sys::statvfs::statvfs;
-use std::collections::HashMap;
 use std::path::Path;
 
 /// Represents filesystem usage information for a specific mount point.
@@ -147,38 +146,4 @@ impl FilesystemUsage {
     pub fn free_ratio(&self) -> f64 {
         1.0 - self.usage_ratio
     }
-}
-
-/// Returns a map of all mounted filesystems and their usage information.
-///
-/// # Returns
-/// A map of mount points to their usage information or an error if the information cannot be
-/// retrieved.
-pub async fn get_all_filesystems() -> Result<HashMap<String, FilesystemUsage>> {
-    let mut ret = HashMap::new();
-    let mounts = smol::unblock(|| procfs::mounts().context("reading /proc/mounts")).await?;
-
-    for mount in mounts.iter() {
-        let mount_point = &mount.fs_spec;
-
-        // Skip pseudo filesystems
-        if mount_point.starts_with("/proc")
-            || mount_point.starts_with("/sys")
-            || mount_point.starts_with("/dev")
-            || mount_point.starts_with("/run")
-        {
-            continue;
-        }
-
-        match FilesystemUsage::new(mount_point).await {
-            Ok(usage) => {
-                ret.insert(mount_point.to_string(), usage);
-            }
-            Err(_) => {
-                // Skip filesystems we can't get stats for
-            }
-        }
-    }
-
-    Ok(ret)
 }
