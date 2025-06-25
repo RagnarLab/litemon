@@ -26,14 +26,14 @@ LiteMon is written in Rust, and uses the
 **Latest version:**
 
 ```
-0.2.0
+0.2.1
 ```
 
 ### Ubuntu/Debian
 
 ```bash
 # Install litemon
-sudo dpkg -i $(curl -w "%{filename_effective}" -SsLO "https://github.com/RagnarLab/litemon/releases/download/v0.2.0/litemon-0.2.0-1.$(uname -m).deb")
+sudo dpkg -i $(curl -w "%{filename_effective}" -SsLO "https://github.com/RagnarLab/litemon/releases/download/v0.2.1/litemon-0.2.1-1.$(uname -m).deb")
 
 # Configure litemon
 sudo mv /etc/litemon/config.kdl.example /etc/litemon/config.kdl
@@ -47,7 +47,7 @@ sudo systemctl restart litemon
 
 ```bash
 # Install litemon
-sudo rpm -iv "https://github.com/RagnarLab/litemon/releases/download/v0.2.0/litemon-0.2.0-1.$(uname -m).rpm"
+sudo rpm -iv "https://github.com/RagnarLab/litemon/releases/download/v0.2.1/litemon-0.2.1-1.$(uname -m).rpm"
 
 # Configure litemon
 sudo mv /etc/litemon/config.kdl.example /etc/litemon/config.kdl
