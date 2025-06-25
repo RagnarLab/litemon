@@ -106,6 +106,7 @@ impl Default for MetricsConfig {
 
 impl UserConfig {
     /// Load the configuratin from the `path` specified.
+    #[allow(clippy::too_many_lines, clippy::shadow_unrelated)]
     pub async fn from_path<P: AsRef<Path>>(path: P) -> anyhow::Result<Self> {
         let docstr = smol::fs::read_to_string(path.as_ref())
             .await

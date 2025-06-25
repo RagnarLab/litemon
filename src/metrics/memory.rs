@@ -10,6 +10,7 @@ use procfs::Current;
 ///
 /// # Returns
 /// The percentage of memory used (0.0 to 1.0) or an error if memory information cannot be read.
+#[allow(clippy::cast_precision_loss)]
 pub async fn get_memory_used_percentage() -> Result<f64> {
     let meminfo = smol::unblock(|| {
         let ret = procfs::Meminfo::current().context("reading /proc/meminfo")?;
@@ -65,6 +66,7 @@ impl MemoryStats {
     ///
     /// # Returns
     /// An object containing detailed memory statistics or an error.
+    #[allow(clippy::cast_precision_loss)]
     pub async fn current() -> Result<Self> {
         let meminfo = smol::unblock(|| {
             let ret = procfs::Meminfo::current().context("reading /proc/meminfo")?;
@@ -86,7 +88,7 @@ impl MemoryStats {
         let swap_used_percent = if swap_total_kb > 0 {
             swap_used_kb as f64 / swap_total_kb as f64
         } else {
-            0.0
+            0.0_f64
         };
 
         Ok(Self {

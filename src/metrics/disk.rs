@@ -29,7 +29,7 @@ impl IOMetrics {
         // We try to only collect statistics about disks which are mounted.
         let mounts = smol::unblock(|| procfs::mounts().context("reading /proc/mounts")).await?;
 
-        let mut ret = IOMetrics {
+        let mut ret = Self {
             disks: HashMap::new(),
         };
 

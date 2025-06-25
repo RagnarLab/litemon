@@ -125,9 +125,9 @@ impl Metric for CpuStatsCollector {
                 .load_avg_enabled
                 .load(std::sync::atomic::Ordering::Acquire)
             {
-                self.load_avg_1m.set(load_avg.one as f64);
-                self.load_avg_5m.set(load_avg.five as f64);
-                self.load_avg_15m.set(load_avg.fifteen as f64);
+                self.load_avg_1m.set(f64::from(load_avg.one));
+                self.load_avg_5m.set(f64::from(load_avg.five));
+                self.load_avg_15m.set(f64::from(load_avg.fifteen));
             }
 
             let current_snapshot = CpuUsage::now().await?;
@@ -165,15 +165,16 @@ struct FilesystemLabels {
 }
 
 impl FilesystemStatsCollector {
-    pub async fn new(options: hashbrown::HashMap<String, String>) -> Result<Self> {
-        let mountpoints = if let Some(mountpoints_str) = options.get("mountpoints") {
-            mountpoints_str
-                .split(',')
-                .map(|s| s.trim().to_string())
-                .collect()
-        } else {
-            vec!["/".to_string()] // Default to root filesystem
-        };
+    pub fn new(options: &hashbrown::HashMap<String, String>) -> Result<Self> {
+        let mountpoints = options.get("mountpoints").map_or_else(
+            || vec!["/".to_string()],
+            |mountpoints_str| {
+                mountpoints_str
+                    .split(',')
+                    .map(|s| s.trim().to_string())
+                    .collect()
+            },
+        );
 
         Ok(Self {
             fs_usage_ratio: Default::default(),
@@ -238,16 +239,16 @@ struct NetworkLabels {
 }
 
 impl NetworkStatsCollector {
-    pub async fn new(options: hashbrown::HashMap<String, String>) -> Result<Self> {
-        let interfaces = if let Some(interfaces_str) = options.get("interfaces") {
-            interfaces_str
-                .split(',')
-                .map(|s| s.trim().to_string())
-                .collect()
-        } else {
-            // Default to common interfaces if none specified
-            vec!["eth0".to_string()]
-        };
+    pub fn new(options: &hashbrown::HashMap<String, String>) -> Result<Self> {
+        let interfaces = options.get("interfaces").map_or_else(
+            || vec!["eth0".to_string()],
+            |interfaces_str| {
+                interfaces_str
+                    .split(',')
+                    .map(|s| s.trim().to_string())
+                    .collect()
+            },
+        );
 
         Ok(Self {
             bytes_received: Default::default(),
@@ -283,6 +284,7 @@ impl Metric for NetworkStatsCollector {
         );
     }
 
+    #[allow(clippy::cast_precision_loss)]
     fn collect(&self) -> DynFuture<'_, Result<()>> {
         Box::pin(async move {
             let interfaces = &self.interfaces;
@@ -336,13 +338,11 @@ struct SystemdUnitLabels {
 }
 
 impl SystemdUnitStateCollector {
-    pub async fn new(options: hashbrown::HashMap<String, String>) -> Result<Self> {
+    pub async fn new(options: &hashbrown::HashMap<String, String>) -> Result<Self> {
         // Parse units from options
-        let units = if let Some(units_str) = options.get("units") {
+        let units = options.get("units").map_or_else(Vec::new, |units_str| {
             units_str.split(',').map(|s| s.trim().to_string()).collect()
-        } else {
-            Vec::new()
-        };
+        });
 
         let client = SystemdUnitState::new().await?;
 
@@ -374,7 +374,7 @@ impl Metric for SystemdUnitStateCollector {
                         for state_name in ActiveState::all_states() {
                             let labels = SystemdUnitLabels {
                                 unit: unit_name.clone(),
-                                state: state_name.to_string(),
+                                state: (*state_name).to_string(),
                             };
                             self.unit_state.get_or_create(&labels).set(0);
                         }
@@ -416,7 +416,7 @@ struct NodeInfoLabels {
 }
 
 impl NodeInfoCollector {
-    pub async fn new() -> Result<Self> {
+    pub fn new() -> Result<Self> {
         let info = NodeInfo::new()?;
 
         let labels = NodeInfoLabels {
@@ -437,7 +437,7 @@ impl Metric for NodeInfoCollector {
             "litemon_node_info",
             "System information about the node",
             self.metric.clone(),
-        )
+        );
     }
 
     fn collect(&self) -> DynFuture<'_, Result<()>> {
@@ -511,15 +511,16 @@ struct DiskStatsLabels {
 }
 
 impl DiskStatsCollector {
-    pub fn new(options: hashbrown::HashMap<String, String>) -> Result<Self> {
-        let mountpoints = if let Some(mountpoints_str) = options.get("mountpoints") {
-            mountpoints_str
-                .split(',')
-                .map(|s| s.trim().to_string())
-                .collect()
-        } else {
-            vec!["/".to_string()] // Default to root filesystem
-        };
+    pub fn new(options: &hashbrown::HashMap<String, String>) -> Result<Self> {
+        let mountpoints = options.get("mountpoints").map_or_else(
+            || vec!["/".to_string()],
+            |mountpoints_str| {
+                mountpoints_str
+                    .split(',')
+                    .map(|s| s.trim().to_string())
+                    .collect()
+            },
+        );
 
         Ok(Self {
             bytes_written: Default::default(),
@@ -545,8 +546,8 @@ impl Metric for DiskStatsCollector {
 
     fn collect(&self) -> DynFuture<'_, Result<()>> {
         Box::pin(async move {
-            let stats = IOMetrics::all().await?;
-            for (device, stats) in &stats.disks {
+            let io = IOMetrics::all().await?;
+            for (device, stats) in &io.disks {
                 if !self.mountpoints.iter().any(|el| el == &stats.mountpoint) {
                     continue;
                 }

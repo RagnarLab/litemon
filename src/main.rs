@@ -1,3 +1,4 @@
+//! LiteMon. Lightweight prometheus metrics for Linux.
 use std::rc::Rc;
 
 use litemon::args::CliArgs;
@@ -7,6 +8,7 @@ use litemon::http;
 use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;
 
+/// Global Jemalloc allocator.
 #[global_allocator]
 static GLOBAL_ALLOC: tikv_jemallocator::Jemalloc = tikv_jemallocator::Jemalloc;
 
@@ -27,6 +29,7 @@ fn main() {
 }
 
 /// Real, asynchronous entrypoint.
+#[allow(clippy::future_not_send)]
 async fn async_main(_ex: &Rc<smol::LocalExecutor<'_>>) {
     let args = CliArgs::from_env().expect("invalid args");
     let config = UserConfig::from_path(&args.config_path)
@@ -54,5 +57,5 @@ async fn async_main(_ex: &Rc<smol::LocalExecutor<'_>>) {
 
     http::listen(collector.clone(), &args.listen_address, args.listen_port)
         .await
-        .unwrap();
+        .expect("starting http server");
 }

@@ -30,7 +30,7 @@ impl NodeInfo {
         };
 
         // SAFETY: `utsname` is initialized, and valid, and return value is checked.
-        if unsafe { nix::libc::uname(&mut utsname) } != 0 {
+        if unsafe { nix::libc::uname(&mut utsname) } != 0_i32 {
             return Err(anyhow::anyhow!("uname return an error"));
         };
 

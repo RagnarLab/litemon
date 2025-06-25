@@ -134,10 +134,10 @@ impl SystemdUnitState<'_> {
             }
         };
 
-        let unit = UnitProxy::new(&self.connection, &unit_path)
+        let proxy = UnitProxy::new(&self.connection, &unit_path)
             .await
             .with_context(|| format!("creating unitproxy for {unit_path:?}"))?;
-        let state = unit
+        let state = proxy
             .active_state()
             .await
             .with_context(|| format!("retrieving activestate for {unit_path:?}"))?;

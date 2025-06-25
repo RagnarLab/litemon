@@ -52,6 +52,7 @@ impl FilesystemUsage {
     ///     Ok(())
     /// }
     /// ```
+    #[allow(clippy::cast_precision_loss)]
     pub async fn new<P: AsRef<Path>>(mount_point: P) -> Result<Self> {
         // Convert the mount point to a string for storage
         let mount_point_str = mount_point
@@ -92,7 +93,7 @@ impl FilesystemUsage {
         let usage_ratio = if total_bytes > 0 {
             used_bytes as f64 / total_bytes as f64
         } else {
-            0.0
+            0.0_f64
         };
 
         // Get filesystem type and device information using procfs
@@ -100,7 +101,7 @@ impl FilesystemUsage {
             .await
             .context("get info for mountpoint")?;
 
-        Ok(FilesystemUsage {
+        Ok(Self {
             mount_point: mount_point_str,
             total_bytes,
             used_bytes,
@@ -121,7 +122,7 @@ impl FilesystemUsage {
         let mounts = smol::unblock(|| procfs::mounts().context("reading /proc/mounts")).await?;
 
         // Find the exact mount point
-        for mount in mounts.iter() {
+        for mount in &mounts {
             if mount.fs_file == mount_point {
                 return Ok((mount.fs_vfstype.clone(), mount.fs_spec.clone()));
             }
@@ -131,7 +132,7 @@ impl FilesystemUsage {
         let path = Path::new(mount_point);
         for ancestor in path.ancestors().skip(1) {
             if let Some(ancestor_str) = ancestor.to_str() {
-                for mount in mounts.iter() {
+                for mount in &mounts {
                     if mount.fs_file == ancestor_str {
                         return Ok((mount.fs_vfstype.clone(), mount.fs_spec.clone()));
                     }

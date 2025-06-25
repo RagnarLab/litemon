@@ -12,7 +12,8 @@ use smol::lock::RwLock;
 
 use crate::config::UserConfig;
 use crate::metrics::collector::{
-    CpuStatsCollector, DiskStatsCollector, FilesystemStatsCollector, MemoryStatsCollector, NetworkStatsCollector, NodeInfoCollector, PressureCollector, SystemdUnitStateCollector
+    CpuStatsCollector, DiskStatsCollector, FilesystemStatsCollector, MemoryStatsCollector,
+    NetworkStatsCollector, NodeInfoCollector, PressureCollector, SystemdUnitStateCollector,
 };
 use crate::metrics::Metric;
 
@@ -50,7 +51,7 @@ impl Collector {
 
         let metrics = &config.metrics;
         {
-            let collector = Box::new(NodeInfoCollector::new().await?);
+            let collector = Box::new(NodeInfoCollector::new()?);
             inner.metrics.push(collector);
         }
 
@@ -75,21 +76,21 @@ impl Collector {
         if metrics.systemd_unit_state.enabled {
             let units = metrics.systemd_unit_state.units.join(",");
             let options = HashMap::from([("units".to_owned(), units)]);
-            let collector = Box::new(SystemdUnitStateCollector::new(options).await?);
+            let collector = Box::new(SystemdUnitStateCollector::new(&options).await?);
             inner.metrics.push(collector);
         }
 
         if metrics.network_throughput.enabled {
             let interfaces = metrics.network_throughput.interfaces.join(",");
             let options = HashMap::from([("interfaces".to_owned(), interfaces)]);
-            let collector = Box::new(NetworkStatsCollector::new(options).await?);
+            let collector = Box::new(NetworkStatsCollector::new(&options)?);
             inner.metrics.push(collector);
         }
 
         if metrics.disk_usage.enabled {
             let mountpoints = metrics.disk_usage.mountpoints.join(",");
             let options = HashMap::from([("mountpoints".to_owned(), mountpoints)]);
-            let collector = Box::new(FilesystemStatsCollector::new(options).await?);
+            let collector = Box::new(FilesystemStatsCollector::new(&options)?);
             inner.metrics.push(collector);
         }
 
@@ -101,7 +102,7 @@ impl Collector {
         if metrics.disk_stats.enabled {
             let mountpoints = metrics.disk_stats.mountpoints.join(",");
             let options = HashMap::from([("mountpoints".to_owned(), mountpoints)]);
-            let collector = Box::new(DiskStatsCollector::new(options)?);
+            let collector = Box::new(DiskStatsCollector::new(&options)?);
             inner.metrics.push(collector);
         }
 
@@ -129,7 +130,7 @@ impl Collector {
             .collect();
         let results = futs.join().await;
         for res in results {
-            res.inspect_err(|err| eprintln!("{err:?}"))
+            res.inspect_err(|err| eprintln!("{err}"))
                 .context("collecting metrics")?;
         }
 

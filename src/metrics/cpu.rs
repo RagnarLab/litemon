@@ -52,10 +52,10 @@ pub struct CpuTime {
 }
 
 impl Add for CpuTime {
-    type Output = CpuTime;
+    type Output = Self;
 
     fn add(self, rhs: Self) -> Self::Output {
-        CpuTime {
+        Self {
             idle_ticks: self.idle_ticks + rhs.idle_ticks,
             total_ticks: self.total_ticks + rhs.total_ticks,
         }
@@ -63,10 +63,10 @@ impl Add for CpuTime {
 }
 
 impl Sub for CpuTime {
-    type Output = CpuTime;
+    type Output = Self;
 
     fn sub(self, rhs: Self) -> Self::Output {
-        CpuTime {
+        Self {
             idle_ticks: self.idle_ticks - rhs.idle_ticks,
             total_ticks: self.total_ticks - rhs.total_ticks,
         }
@@ -75,7 +75,7 @@ impl Sub for CpuTime {
 
 impl CpuUsage {
     /// Retrieve the current CPU usage in ticks from boot.
-    pub async fn now() -> Result<CpuUsage> {
+    pub async fn now() -> Result<Self> {
         let stat = smol::unblock(|| {
             let ret = procfs::KernelStats::current().context("reading /proc/stat")?;
             Ok::<procfs::KernelStats, anyhow::Error>(ret)
@@ -115,6 +115,7 @@ impl CpuUsage {
     }
 
     /// Calculate the CPU usage between two snapshots taken via [`Self::now()`] for all CPU cores.
+    #[allow(clippy::cast_precision_loss)]
     pub fn percentage_all_cores(&self, prev: &Self) -> f64 {
         let diff = self.total_ticks - prev.total_ticks;
         (diff.total_ticks - diff.idle_ticks) as f64 / diff.total_ticks as f64
@@ -122,6 +123,7 @@ impl CpuUsage {
 
     /// Calculate the CPU usage between two snapshots taken via [`Self::now()`] for each CPU core
     /// separately.
+    #[allow(clippy::cast_precision_loss)]
     pub fn percentage_per_core(&self, prev: &Self) -> Vec<f64> {
         self.per_core_ticks
             .iter()

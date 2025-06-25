@@ -37,11 +37,11 @@ async fn serve_request(
 
     match (req.method(), req.uri().path()) {
         (&Method::GET, "/metrics") => {
-            let res = serve_metrics(&collector)
+            let response = serve_metrics(&collector)
                 .await
                 .inspect_err(|err| eprintln!("error serving metrics request: {err}"))
                 .unwrap_or_else(|_err| internal_server_error());
-            Ok(res)
+            Ok(response)
         }
 
         (_, _) => Ok(not_found()),

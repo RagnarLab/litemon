@@ -7,7 +7,7 @@ use litemon::config::UserConfig;
 
 #[test]
 fn load_config_from_path() {
-    let config = r#"
+    let configstr = r#"
 metrics {
   cpu_seconds enabled=#true period_ms=200
   loadavg enabled=#false
@@ -26,7 +26,7 @@ metrics {
     let tmp =
         std::env::var("CARGO_TARGET_TMPDIR").map_or_else(|_| std::env::temp_dir(), PathBuf::from);
     let filepath = tmp.join("load_config_from_path_test.kdl");
-    std::fs::write(&filepath, config).unwrap();
+    std::fs::write(&filepath, configstr).unwrap();
 
     smol::block_on(async move {
         let config = UserConfig::from_path(&filepath).await.unwrap();

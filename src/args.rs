@@ -6,7 +6,7 @@ use std::process::exit;
 use anyhow::Result;
 
 /// Args passed into the application.
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct CliArgs {
     /// Optional listen address. By default, listens on `127.0.0.1`
     pub listen_address: String,
