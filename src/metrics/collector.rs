@@ -386,11 +386,7 @@ impl Metric for SystemdUnitStateCollector {
                         self.unit_state.get_or_create(&current_labels).set(1);
                     }
                     Err(e) => {
-                        return Err(anyhow::anyhow!(
-                            "Failed to get state for unit {}: {}",
-                            unit_name,
-                            e
-                        ));
+                        tracing::debug!("Failed to get state for unit {unit_name}: {e}");
                     }
                 }
             }
