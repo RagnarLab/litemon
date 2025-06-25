@@ -547,13 +547,13 @@ impl Metric for DiskStatsCollector {
     fn collect(&self) -> DynFuture<'_, Result<()>> {
         Box::pin(async move {
             let io = IOMetrics::all().await?;
-            for (device, stats) in &io.disks {
+            for stats in &io.disks {
                 if !self.mountpoints.iter().any(|el| el == &stats.mountpoint) {
                     continue;
                 }
 
                 let labels = DiskStatsLabels {
-                    device: device.clone(),
+                    device: stats.device.clone(),
                     mountpoint: stats.mountpoint.clone(),
                 };
 

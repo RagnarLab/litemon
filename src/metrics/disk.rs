@@ -1,13 +1,12 @@
 //! Metrics about bytes read/written to disks.
 
 use anyhow::{Context, Result};
-use hashbrown::HashMap;
 
 /// Metrics about the bytes read/written to each attached disk.
 #[derive(Debug)]
 pub struct IOMetrics {
     /// Each disk is one entry.
-    pub disks: HashMap<String, DiskMetrics>,
+    pub disks: Vec<DiskMetrics>,
 }
 
 /// Metrics about a single disk.
@@ -19,6 +18,10 @@ pub struct DiskMetrics {
     pub bytes_written_total: u64,
     /// Mountpoint
     pub mountpoint: String,
+    /// Device name
+    pub rootdevice: String,
+    /// Device name
+    pub device: String,
 }
 
 impl IOMetrics {
@@ -30,7 +33,7 @@ impl IOMetrics {
         let mounts = smol::unblock(|| procfs::mounts().context("reading /proc/mounts")).await?;
 
         let mut ret = Self {
-            disks: HashMap::new(),
+            disks: Vec::new(),
         };
 
         for mount in &mounts {
@@ -68,13 +71,16 @@ impl IOMetrics {
                 .trim()
                 .parse::<u64>()
                 .context("parsing sector size")?;
+
             let metrics = DiskMetrics {
                 bytes_read_total: stat.sectors_read * sector_size,
                 bytes_written_total: stat.sectors_written * sector_size,
                 mountpoint: mount_point.clone(),
+                rootdevice: stat.name.clone(),
+                device: device.clone(),
             };
 
-            ret.disks.insert(stat.name.clone(), metrics);
+            ret.disks.push(metrics);
         }
 
         Ok(ret)
