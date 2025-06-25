@@ -411,8 +411,6 @@ struct NodeInfoLabels {
     hostname: String,
     /// CPU architecture
     arch: String,
-    /// Uptime as seconds
-    uptime: String,
 }
 
 impl NodeInfoCollector {
@@ -422,7 +420,6 @@ impl NodeInfoCollector {
         let labels = NodeInfoLabels {
             hostname: info.hostname.clone(),
             arch: info.arch.clone(),
-            uptime: format!("{}", info.uptime.as_secs()),
         };
         let metric = Family::<NodeInfoLabels, Gauge>::default();
         metric.get_or_create(&labels).set(1);
@@ -568,6 +565,29 @@ impl Metric for DiskStatsCollector {
                     .inc_by(stats.bytes_written_total - bytes_written_prev);
             }
 
+            Ok(())
+        })
+    }
+}
+
+#[derive(Debug, Default)]
+pub struct NodeUptimeCollector {
+    metric: Gauge<u64, AtomicU64>,
+}
+
+impl Metric for NodeUptimeCollector {
+    fn register(&self, registry: &mut prometheus_client::registry::Registry) {
+        registry.register(
+            "litemon_node_uptime",
+            "Uptime in seconds",
+            self.metric.clone(),
+        );
+    }
+
+    fn collect(&self) -> DynFuture<'_, Result<()>> {
+        Box::pin(async move {
+            let info = NodeInfo::new()?;
+            self.metric.set(info.uptime.as_secs());
             Ok(())
         })
     }

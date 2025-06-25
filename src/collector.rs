@@ -12,8 +12,7 @@ use smol::lock::RwLock;
 
 use crate::config::UserConfig;
 use crate::metrics::collector::{
-    CpuStatsCollector, DiskStatsCollector, FilesystemStatsCollector, MemoryStatsCollector,
-    NetworkStatsCollector, NodeInfoCollector, PressureCollector, SystemdUnitStateCollector,
+    CpuStatsCollector, DiskStatsCollector, FilesystemStatsCollector, MemoryStatsCollector, NetworkStatsCollector, NodeInfoCollector, NodeUptimeCollector, PressureCollector, SystemdUnitStateCollector
 };
 use crate::metrics::Metric;
 
@@ -52,6 +51,10 @@ impl Collector {
         let metrics = &config.metrics;
         {
             let collector = Box::new(NodeInfoCollector::new()?);
+            inner.metrics.push(collector);
+        }
+        {
+            let collector = Box::new(NodeUptimeCollector::default());
             inner.metrics.push(collector);
         }
 
