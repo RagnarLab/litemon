@@ -419,7 +419,7 @@ impl NodeInfoCollector {
 
         let labels = NodeInfoLabels {
             hostname: info.hostname.clone(),
-            arch: info.arch.clone(),
+            arch: info.arch,
         };
         let metric = Family::<NodeInfoLabels, Gauge>::default();
         metric.get_or_create(&labels).set(1);
