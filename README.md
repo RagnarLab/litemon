@@ -26,14 +26,14 @@ LiteMon is written in Rust, and uses the
 **Latest version:**
 
 ```
-0.1.4
+0.2.0
 ```
 
 ### Ubuntu/Debian
 
 ```bash
 # Install litemon
-sudo dpkg -i $(curl -w "%{filename_effective}" -SsLO "https://github.com/RagnarLab/litemon/releases/download/v0.1.4/litemon-0.1.4-1.$(uname -m).deb")
+sudo dpkg -i $(curl -w "%{filename_effective}" -SsLO "https://github.com/RagnarLab/litemon/releases/download/v0.2.0/litemon-0.2.0-1.$(uname -m).deb")
 
 # Configure litemon
 sudo mv /etc/litemon/config.kdl.example /etc/litemon/config.kdl
@@ -47,7 +47,7 @@ sudo systemctl restart litemon
 
 ```bash
 # Install litemon
-sudo rpm -iv "https://github.com/RagnarLab/litemon/releases/download/v0.1.4/litemon-0.1.4-1.$(uname -m).rpm"
+sudo rpm -iv "https://github.com/RagnarLab/litemon/releases/download/v0.2.0/litemon-0.2.0-1.$(uname -m).rpm"
 
 # Configure litemon
 sudo mv /etc/litemon/config.kdl.example /etc/litemon/config.kdl
@@ -154,10 +154,15 @@ prometheus.scrape "litemon_exporter" {
 | litemon_mem_used_percentage   | Gauge       | Memory used (0.0-1.0) in percent. | 1 per host |
 | litemon_systemd_unit_state    | Gauge       | Systemd unit state (1 for current state, 0 otherwise). | 1 per service, 1 per state, 8 states |
 | litemon_net_bytes_received    | Counter     | Network bytes received.       | 1 per host, 1 per network interface |
-| litemon_net_errors_received   | Counter     | Network errors received.      | 1 per host, 1 per network interface |
+| litemon_net_errors_received   | Counter     | Network errors received (packets) | 1 per host, 1 per network interface |
 | litemon_net_bytes_sent        | Counter     | Network bytes sent.           | 1 per host, 1 per network interface |
-| litemon_net_errors_sent       | Counter     | Network errors sent.          | 1 per host, 1 per network interface |
-| litemon_fs_usage_ratio        | Gauge       | Filesystem usage ratio (0.0-1.0). | 1 per host, 1 per mount point |
+| litemon_net_errors_sent       | Counter     | Network errors sent (packets) | 1 per host, 1 per network interface |
+| litemon_fs_usage_ratio        | Gauge       | Filesystem usage ratio (0.0-1.0). | 1 per mount point |
+| litemon_memory_pressure_total    | Gauge    | Memory pressure stall information (PSI) in microseconds. | 1 per host |
+| litemon_cpu_pressure_total       | Gauge    | CPU pressure stall information (PSI) in microseconds. | 1 per host |
+| litemon_io_pressure_total        | Gauge    | I/O pressure stall information (PSI) in microseconds. | 1 per host |
+| litemon_disk_bytes_read_total    | Gauge    | Number of bytes read from disk since boot. | 1 per mount point |
+| litemon_disk_bytes_written_total | Gauge    | Number of bytes written to disk since boot. | 1 per mount point |
 
 
 ## Support
