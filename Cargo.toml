@@ -38,7 +38,7 @@ opt-level = 0
 
 [profile.release]
 incremental = false
-codegen-units = 3
+codegen-units = 1
 strip = "none"
 split-debuginfo = "off"
 overflow-checks = true
