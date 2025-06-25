@@ -1,8 +1,8 @@
 {
   "__inputs": [
     {
-      "name": "DS_PROMETHEUS",
-      "label": "Prometheus",
+      "name": "DS_GRAFANACLOUD-RAGNARLAB-PROM",
+      "label": "grafanacloud-ragnarlab-prom",
       "description": "",
       "type": "datasource",
       "pluginId": "prometheus",
@@ -15,7 +15,7 @@
       "type": "grafana",
       "id": "grafana",
       "name": "Grafana",
-      "version": "12.0.1"
+      "version": "12.1.0-90058"
     },
     {
       "type": "datasource",
@@ -46,6 +46,7 @@
       }
     ]
   },
+  "description": "View all node resources with LiteMon at a glance",
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
@@ -55,7 +56,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
+        "uid": "${DS_GRAFANACLOUD-RAGNARLAB-PROM}"
       },
       "description": "",
       "fieldConfig": {
@@ -75,7 +76,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": 0
               },
               {
                 "color": "red",
@@ -116,7 +118,8 @@
                   "mode": "absolute",
                   "steps": [
                     {
-                      "color": "green"
+                      "color": "green",
+                      "value": 0
                     },
                     {
                       "color": "#EAB839",
@@ -128,10 +131,6 @@
                     }
                   ]
                 }
-              },
-              {
-                "id": "custom.minWidth",
-                "value": 200
               }
             ]
           },
@@ -167,7 +166,8 @@
                   "mode": "absolute",
                   "steps": [
                     {
-                      "color": "green"
+                      "color": "green",
+                      "value": 0
                     },
                     {
                       "color": "#EAB839",
@@ -179,10 +179,6 @@
                     }
                   ]
                 }
-              },
-              {
-                "id": "custom.minWidth",
-                "value": 200
               }
             ]
           },
@@ -218,7 +214,8 @@
                   "mode": "absolute",
                   "steps": [
                     {
-                      "color": "green"
+                      "color": "green",
+                      "value": 0
                     },
                     {
                       "color": "#EAB839",
@@ -255,7 +252,8 @@
                   "mode": "absolute",
                   "steps": [
                     {
-                      "color": "green"
+                      "color": "green",
+                      "value": 0
                     },
                     {
                       "color": "red",
@@ -263,6 +261,10 @@
                     }
                   ]
                 }
+              },
+              {
+                "id": "custom.width",
+                "value": 100
               }
             ]
           },
@@ -282,7 +284,8 @@
                   "mode": "absolute",
                   "steps": [
                     {
-                      "color": "green"
+                      "color": "green",
+                      "value": 0
                     },
                     {
                       "color": "red",
@@ -296,6 +299,10 @@
                 "value": {
                   "type": "color-background"
                 }
+              },
+              {
+                "id": "custom.width",
+                "value": 100
               }
             ]
           },
@@ -315,7 +322,8 @@
                   "mode": "absolute",
                   "steps": [
                     {
-                      "color": "green"
+                      "color": "green",
+                      "value": 0
                     },
                     {
                       "color": "red",
@@ -329,6 +337,10 @@
                 "value": {
                   "type": "color-background"
                 }
+              },
+              {
+                "id": "custom.width",
+                "value": 80
               }
             ]
           },
@@ -348,7 +360,8 @@
                   "mode": "absolute",
                   "steps": [
                     {
-                      "color": "green"
+                      "color": "green",
+                      "value": 0
                     },
                     {
                       "color": "red",
@@ -362,6 +375,10 @@
                 "value": {
                   "type": "color-background"
                 }
+              },
+              {
+                "id": "custom.width",
+                "value": 80
               }
             ]
           },
@@ -387,7 +404,8 @@
                   "mode": "absolute",
                   "steps": [
                     {
-                      "color": "green"
+                      "color": "green",
+                      "value": 0
                     },
                     {
                       "color": "red",
@@ -395,6 +413,10 @@
                     }
                   ]
                 }
+              },
+              {
+                "id": "custom.width",
+                "value": 100
               }
             ]
           },
@@ -421,7 +443,8 @@
                   "mode": "absolute",
                   "steps": [
                     {
-                      "color": "green"
+                      "color": "green",
+                      "value": 0
                     },
                     {
                       "color": "red",
@@ -429,6 +452,22 @@
                     }
                   ]
                 }
+              },
+              {
+                "id": "custom.width",
+                "value": 100
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Hostname"
+            },
+            "properties": [
+              {
+                "id": "custom.minWidth",
+                "value": 200
               }
             ]
           }
@@ -453,12 +492,12 @@
         },
         "showHeader": true
       },
-      "pluginVersion": "12.0.1",
+      "pluginVersion": "12.1.0-90058",
       "targets": [
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "${DS_GRAFANACLOUD-RAGNARLAB-PROM}"
           },
           "disableTextWrap": false,
           "editorMode": "code",
@@ -477,7 +516,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "${DS_GRAFANACLOUD-RAGNARLAB-PROM}"
           },
           "editorMode": "code",
           "exemplar": false,
@@ -493,7 +532,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "${DS_GRAFANACLOUD-RAGNARLAB-PROM}"
           },
           "editorMode": "code",
           "exemplar": false,
@@ -508,7 +547,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "${DS_GRAFANACLOUD-RAGNARLAB-PROM}"
           },
           "editorMode": "code",
           "exemplar": false,
@@ -523,7 +562,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "${DS_GRAFANACLOUD-RAGNARLAB-PROM}"
           },
           "editorMode": "code",
           "exemplar": false,
@@ -539,7 +578,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "${DS_GRAFANACLOUD-RAGNARLAB-PROM}"
           },
           "editorMode": "code",
           "exemplar": false,
@@ -555,7 +594,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "${DS_GRAFANACLOUD-RAGNARLAB-PROM}"
           },
           "editorMode": "code",
           "exemplar": false,
@@ -571,7 +610,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "${DS_GRAFANACLOUD-RAGNARLAB-PROM}"
           },
           "editorMode": "code",
           "exemplar": false,
@@ -587,7 +626,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "${DS_GRAFANACLOUD-RAGNARLAB-PROM}"
           },
           "editorMode": "code",
           "exemplar": false,
@@ -603,7 +642,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "${DS_GRAFANACLOUD-RAGNARLAB-PROM}"
           },
           "editorMode": "code",
           "exemplar": false,
@@ -622,6 +661,7 @@
         {
           "id": "joinByField",
           "options": {
+            "byField": "instance",
             "mode": "outer"
           }
         },
@@ -730,6 +770,7 @@
               "mountpoint 3": 48,
               "uptime": 15
             },
+            "orderByMode": "manual",
             "renameByName": {
               "Value #CPU": "CPU Usage",
               "Value #DISK_READ": "Disk read",
@@ -749,7 +790,7 @@
       "type": "table"
     }
   ],
-  "refresh": "10s",
+  "refresh": "1m",
   "schemaVersion": 41,
   "tags": [
     "litemon"
