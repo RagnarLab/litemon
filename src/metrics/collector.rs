@@ -210,9 +210,7 @@ impl Metric for FilesystemStatsCollector {
                     }
                     Err(e) => {
                         return Err(anyhow::anyhow!(
-                            "Failed to collect filesystem stats for {}: {}",
-                            mountpoint,
-                            e
+                            "Failed to collect filesystem stats for {mountpoint}: {e}",
                         ));
                     }
                 }
