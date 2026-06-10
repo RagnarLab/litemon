@@ -2,7 +2,7 @@
 name = "litemon"
 version = "0.2.3"
 edition = "2024"
-rust-version = "1.85.0"
+rust-version = "1.95.0"
 description = "A very minimal and lightweight metric collector for Linux systems"
 license = "MIT OR Apache-2.0"
 authors = ["Arvid Gerstmann <github@arvid.io>"]
